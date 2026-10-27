@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10201f">
+<title>Rantai Fun Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+/* Layout: one-screen phone app; hazard-stripe header band, one stage card, big touch targets. Single dark arcade look by design. */
+:root{
+  --ink:#10201f;        /* page ground: deep plant-floor teal */
+  --panel:#18302e;
+  --line:#2b4b48;
+  --fg:#eef5f1;
+  --muted:#9fb9b3;
+  --hazard:#ffc93c;     /* safety yellow */
+  --go:#3ddc97;
+  --stop:#ff5c5c;
+  --blue:#4aa8ff;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+html{background:var(--ink)}
+body{background:var(--ink);color:var(--fg);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 24px}
+*{box-sizing:border-box}
+.wrap{max-width:460px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.hazard{height:10px;border-radius:0 0 6px 6px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 12px,var(--ink) 12px 24px)}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:var(--display);font-size:20px;letter-spacing:.02em;color:var(--hazard);line-height:1.1}
+.brand small{display:block;font-family:var(--body);font-weight:600;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.chip{font-weight:800;font-size:13px;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
+.track{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.track span{height:8px;border-radius:4px;background:var(--line)}
+.track span.done{background:var(--go)}
+.track span.now{background:var(--hazard)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.1}
+h1{font-size:28px}
+h2{font-size:22px}
+p{margin:0;line-height:1.5;color:var(--muted)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--hazard)}
+button{font:inherit;cursor:pointer;border:0;color:inherit;touch-action:manipulation}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.btn{background:var(--hazard);color:#1b1500;font-weight:800;font-size:18px;padding:16px;border-radius:14px;width:100%}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line);font-size:15px;padding:12px}
+.btn:active{transform:scale(.98)}
+.list{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:0;list-style:none}
+.list li{font-size:14px;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:center}
+.list b{font-family:var(--display);font-weight:400;color:var(--hazard);font-variant-numeric:tabular-nums}
+label{font-size:13px;font-weight:600;color:var(--muted)}
+select,input{font:inherit;font-size:17px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--fg)}
+.row{display:flex;gap:8px}
+.row>*{min-width:0}
+.err{color:var(--stop);font-weight:600;font-size:14px}
+.qr{background:#fff;padding:14px;border-radius:14px;align-self:center;line-height:0}
+.qr img,.qr canvas{width:220px!important;height:220px!important}
+.code{font-family:ui-monospace,Menlo,monospace;font-size:18px;font-weight:700;text-align:center;letter-spacing:.06em;background:var(--ink);border:1px dashed var(--line);border-radius:10px;padding:10px;user-select:all;word-break:break-all}
+.timer{font-family:var(--display);font-size:16px;color:var(--hazard);font-variant-numeric:tabular-nums}
+.big{font-family:var(--display);font-size:56px;text-align:center;font-variant-numeric:tabular-nums;color:var(--hazard)}
+.bar{height:14px;background:var(--ink);border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--go);transition:width .08s}
+.pump{aspect-ratio:1;width:min(70vw,260px);max-width:100%;align-self:center;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a8a,var(--stop));font-family:var(--display);font-size:26px;color:#fff;box-shadow:0 8px 0 #9e2f2f}
+.pump:active{transform:translateY(6px);box-shadow:0 2px 0 #9e2f2f}
+.grid{display:grid;gap:8px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.tile{aspect-ratio:1;border-radius:12px;background:var(--ink);border:1px solid var(--line);font-size:28px;font-weight:800;display:grid;place-items:center;max-width:100%}
+.tile.back{background:repeating-linear-gradient(-45deg,#2b4b48 0 8px,#223d3a 8px 16px)}
+.tile.ok{background:var(--go);color:#062b1b;border-color:var(--go)}
+.tile.hit{opacity:.25}
+.opt{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:left;font-size:16px;font-weight:600}
+.opt.bad{border-color:var(--stop);animation:shake .3s}
+.react{height:240px;border-radius:16px;display:grid;place-items:center;font-family:var(--display);font-size:24px;text-align:center;padding:12px}
+.pad{aspect-ratio:1;border-radius:18px;opacity:.35;max-width:100%}
+.pad.lit{opacity:1;transform:scale(1.03)}
+.slot{min-height:56px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;align-items:center}
+.slot span{width:38px;height:46px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;font-family:var(--display);font-size:22px}
+.letters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.letters button{width:52px;height:56px;border-radius:12px;background:var(--hazard);color:#1b1500;font-family:var(--display);font-size:24px}
+.letters button.used{visibility:hidden}
+.done-ring{font-family:var(--display);font-size:20px;color:var(--go);text-align:center}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:14px;text-align:left}
+th,td{padding:10px;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--ink)}
+tr:last-child td{border-bottom:0}
+tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
+.pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
+.pill.ok{background:var(--go);color:#062b1b}
+.btn:disabled{opacity:.6}
+body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
+</style>
+</head>
+<body>
+<div class="hazard"></div>
+<div class="wrap" style="padding-top:14px">
+  <header>
+    <div class="brand">Rantai Fun Race<small>8 Game · 8 Pekerja · 1 Rantai</small></div>
+    <span class="chip" id="teamChip" hidden></span>
+  </header>
+  <div class="track" id="track" hidden></div>
+  <main id="app"></main>
+</div>
+<script>
+/* ===== Konfigurasi ===== */
+const API_URL = "https://script.google.com/macros/s/AKfycbyRE8htk8mPauI3yhOiXBK58VgtsF398IiTkRU50Zl3afz4svDJpZxvvUbyU2yvJwa-nw/exec";
+const TEAMS = 12;
+const BASE = location.origin + location.pathname;
+
+/* ===== Storan phone ===== */
+const store={
+  get(k){try{return JSON.parse(localStorage.getItem("rfr_"+k))}catch(e){return null}},
+  set(k,v){try{v===null?localStorage.removeItem("rfr_"+k):localStorage.setItem("rfr_"+k,JSON.stringify(v))}catch(e){}}
+};
+let DEVICE=store.get("device");
+if(!DEVICE){DEVICE=Math.random().toString(36).slice(2,10)+Date.now().toString(36);store.set("device",DEVICE)}
+
+async function api(action,data){
+  if(/TAMPAL_URL/.test(API_URL)) throw new Error("API belum disetkan. Tampal URL Web App dalam index.html.");
+  let r;
+  try{r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,device:DEVICE,...data})})}
+  catch(e){throw new Error("Tiada sambungan internet. Semak line dan cuba lagi.")}
+  let j;try{j=await r.json()}catch(e){throw new Error("Server tidak memberi jawapan yang sah. Cuba lagi.")}
+  if(!j.ok) throw new Error(j.error||"Ralat tidak diketahui.");
+  return j;
+}
+
+const fmt=s=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+const since=ms=>Math.max(0,Math.floor((Date.now()-ms)/1000));
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $app=document.getElementById("app");
+const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();return d.firstElementChild};
+
+/* ===== 8 Game ===== */
+const GAMES=[
+ {name:"Pam APAR",desc:"Tekan butang merah 50 kali secepat mungkin untuk 'pam' alat pemadam api.",play:gTap},
+ {name:"Padan PPE",desc:"Buka kad dan padankan 6 pasang peralatan keselamatan.",play:gMemory},
+ {name:"Kuiz HSE",desc:"Jawab 3 soalan keselamatan dengan betul. Salah? Cuba lagi.",play:gQuiz},
+ {name:"Susun 1–16",desc:"Tekan nombor 1 hingga 16 mengikut turutan.",play:gOrder},
+ {name:"Refleks Lampu",desc:"Tekan bila skrin bertukar HIJAU. Perlu 3 kali bawah 0.7 saat.",play:gReact},
+ {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
+ {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 2 perkataan.",play:gWord},
+ {name:"Kira Pantas",desc:"Jawab 6 soalan matematik dengan betul.",play:gMath},
+];
+
+function gTap(box,done){
+  let n=0;const N=50;
+  box.append(el(`<div class="bar"><i id="b"></i></div>`));
+  const c=el(`<div class="big">0</div>`);box.append(c);
+  const p=el(`<button class="pump" id="pump">PAM!</button>`);box.append(p);
+  p.addEventListener("pointerdown",e=>{e.preventDefault();if(n>=N)return;n++;c.textContent=n;box.querySelector("#b").style.width=(n/N*100)+"%";buzz(10);if(n>=N)done()});
+}
+function gMemory(box,done){
+  const icons=["⛑️","🧤","🥽","🦺","🧯","👢"];
+  const deck=shuffle([...icons,...icons]);let open=[],matched=0,lock=false;
+  const g=el(`<div class="grid g4"></div>`);box.append(g);
+  deck.forEach((ic,i)=>{const b=el(`<button class="tile back" aria-label="Kad ${i+1}"></button>`);b.dataset.ic=ic;g.append(b);
+    b.onclick=()=>{if(lock||b.classList.contains("ok")||open.includes(b))return;b.classList.remove("back");b.textContent=ic;open.push(b);
+      if(open.length===2){lock=true;const[a,c]=open;
+        if(a.dataset.ic===c.dataset.ic){a.classList.add("ok");c.classList.add("ok");open=[];lock=false;matched++;buzz(20);if(matched===6)setTimeout(done,350)}
+        else setTimeout(()=>{[a,c].forEach(x=>{x.classList.add("back");x.textContent=""});open=[];lock=false},650)}}});
+}
+const QBANK=[
+ ["Warna topi keselamatan untuk pelawat biasanya?",["Putih","Hitam","Ungu"],0],
+ ["Akta utama keselamatan pekerjaan di Malaysia?",["OSHA 1994","Akta Jalan 1987","Akta Kastam 1967"],0],
+ ["Langkah pertama bila nampak kebakaran kecil?",["Bunyikan penggera","Ambil gambar","Tunggu penyelia"],0],
+ ["APAR jenis CO2 sesuai untuk kebakaran...?",["Peralatan elektrik","Kertas sahaja","Minyak masak dalam kuali besar"],0],
+ ["Apakah maksud PPE?",["Personal Protective Equipment","Plant Process Engineering","Permit Penilaian Ekstra"],0],
+ ["Sebelum kerja panas (hot work) perlu ada...?",["Permit kerja","Kopi","Muzik"],0],
+ ["Titik berkumpul kecemasan dipanggil...?",["Assembly point","Check point","Break point"],0],
+ ["HIRARC digunakan untuk...?",["Mengenal pasti bahaya & menilai risiko","Mengira gaji","Menjadual cuti"],0],
+ ["Teknik PASS untuk APAR: P bermaksud?",["Pull (tarik pin)","Push","Pause"],0],
+];
+function gQuiz(box,done){
+  const qs=shuffle(QBANK).slice(0,3);let i=0;
+  const render=()=>{box.innerHTML="";const [q,opts]=qs[i];
+    box.append(el(`<div class="eyebrow">Soalan ${i+1} / 3</div>`));box.append(el(`<h2 style="font-size:19px;font-family:var(--body);font-weight:800">${q}</h2>`));
+    const g=el(`<div class="grid"></div>`);box.append(g);
+    shuffle(opts.map((o,k)=>[o,k])).forEach(([o,k])=>{const b=el(`<button class="opt">${o}</button>`);g.append(b);
+      b.onclick=()=>{if(k===0){buzz(20);i++;i<3?render():done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("bad");buzz([40,40,40])}}})};
+  render();
+}
+function gOrder(box,done){
+  let next=1;const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b></p>`);box.append(info);
+  const g=el(`<div class="grid g4"></div>`);box.append(g);
+  shuffle([...Array(16)].map((_,k)=>k+1)).forEach(n=>{const b=el(`<button class="tile">${n}</button>`);g.append(b);
+    b.onclick=()=>{if(n===next){b.classList.add("hit");next++;buzz(10);info.querySelector("b").textContent=next>16?"✓":next;if(next>16)done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}});
+}
+function gReact(box,done){
+  let ok=0,state="idle",t0=0,timer;
+  const s=el(`<p>Berjaya: <b style="color:var(--go)">0</b> / 3</p>`);box.append(s);
+  const pad=el(`<button class="react"></button>`);box.append(pad);
+  const set=(bg,fg,txt)=>{pad.style.background=bg;pad.style.color=fg;pad.textContent=txt};
+  const ready=()=>{state="idle";set("var(--line)","var(--fg)","Tekan untuk mula")};
+  ready();
+  pad.addEventListener("pointerdown",e=>{e.preventDefault();
+    if(state==="idle"){state="wait";set("var(--stop)","#fff","Tunggu hijau…");timer=setTimeout(()=>{state="go";t0=performance.now();set("var(--go)","#062b1b","TEKAN!")},1200+Math.random()*2200)}
+    else if(state==="wait"){clearTimeout(timer);state="msg";set("var(--hazard)","#1b1500","Terlalu awal! Tekan untuk cuba lagi");buzz(80);setTimeout(()=>state="idle",400)}
+    else if(state==="go"){const ms=Math.round(performance.now()-t0);
+      if(ms<=700){ok++;s.querySelector("b").textContent=ok;buzz(20);if(ok>=3){state="end";set("var(--go)","#062b1b",`${ms} ms ✓`);setTimeout(done,500);return}set("var(--panel)","var(--fg)",`${ms} ms ✓ — tekan untuk seterusnya`)}
+      else set("var(--panel)","var(--fg)",`${ms} ms — terlalu lambat, tekan lagi`);
+      state="msg";setTimeout(()=>state="idle",350)}
+    else if(state==="idle"){}
+  });
+}
+function gSimon(box,done){
+  const cols=["var(--stop)","var(--go)","var(--blue)","var(--hazard)"];const L=5;
+  let seq=[],pos=0,busy=true;
+  const s=el(`<p id="sm">Perhatikan…</p>`);box.append(s);
+  const g=el(`<div class="grid g2"></div>`);box.append(g);
+  const pads=cols.map((c,i)=>{const b=el(`<button class="pad" aria-label="Warna ${i+1}" style="background:${c}"></button>`);g.append(b);return b});
+  const flash=(i,ms=380)=>new Promise(r=>{pads[i].classList.add("lit");setTimeout(()=>{pads[i].classList.remove("lit");setTimeout(r,160)},ms)});
+  const round=async()=>{busy=true;pos=0;s.textContent=`Perhatikan… (${seq.length}/${L})`;await new Promise(r=>setTimeout(r,500));for(const i of seq)await flash(i);busy=false;s.textContent=`Giliran anda (${seq.length}/${L})`};
+  const fresh=()=>{seq=[Math.random()*4|0];round()};
+  pads.forEach((p,i)=>p.onclick=async()=>{if(busy)return;flash(i,180);
+    if(i!==seq[pos]){busy=true;buzz([60,40,60]);s.textContent="Salah! Mula semula…";setTimeout(fresh,900);return}
+    pos++;if(pos===seq.length){if(seq.length>=L){busy=true;s.textContent="Hebat!";setTimeout(done,500);return}seq.push(Math.random()*4|0);setTimeout(round,400)}});
+  fresh();
+}
+function gWord(box,done){
+  const words=shuffle(["APAR","GOGAL","PERMIT","SARUNG","TOPI","KASUT","PENGGERA","RISIKO"]).slice(0,2);let wi=0;
+  const render=()=>{box.innerHTML="";const w=words[wi];let typed="";
+    box.append(el(`<div class="eyebrow">Perkataan ${wi+1} / 2</div>`));
+    const slot=el(`<div class="slot"></div>`);box.append(slot);
+    [...w].forEach(()=>slot.append(el(`<span></span>`)));
+    const lt=el(`<div class="letters"></div>`);box.append(lt);
+    let mix=shuffle([...w]);if(mix.join("")===w)mix=mix.reverse();
+    const btns=mix.map(ch=>{const b=el(`<button>${ch}</button>`);lt.append(b);return b});
+    const reset=()=>{typed="";btns.forEach(b=>b.classList.remove("used"));slot.querySelectorAll("span").forEach(s=>s.textContent="")};
+    btns.forEach(b=>b.onclick=()=>{const ch=b.textContent;
+      if(w[typed.length]===ch){b.classList.add("used");slot.children[typed.length].textContent=ch;typed+=ch;buzz(10);
+        if(typed===w){wi++;setTimeout(()=>wi<2?render():done(),400)}}
+      else{buzz(60);slot.animate?slot.animate([{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"none"}],{duration:250}):0;reset()}});
+    box.append(el(`<p style="text-align:center;font-size:13px">Huruf salah = mula semula perkataan</p>`));
+  };render();
+}
+function gMath(box,done){
+  let ok=0;const N=6;
+  const render=()=>{box.innerHTML="";
+    const ops=[["+",(a,b)=>a+b],["−",(a,b)=>a-b],["×",(a,b)=>a*b]];const [sym,f]=ops[Math.random()*3|0];
+    let a=sym==="×"?2+(Math.random()*8|0):10+(Math.random()*40|0),b=sym==="×"?2+(Math.random()*8|0):1+(Math.random()*20|0);
+    const ans=f(a,b);const opts=new Set([ans]);while(opts.size<4)opts.add(ans+((Math.random()*10|0)-5||7));
+    box.append(el(`<div class="eyebrow">Betul ${ok} / ${N}</div>`));
+    box.append(el(`<div class="big" style="font-size:44px">${a} ${sym} ${b}</div>`));
+    const g=el(`<div class="grid g2"></div>`);box.append(g);
+    shuffle([...opts]).forEach(v=>{const btn=el(`<button class="opt" style="text-align:center;font-size:22px">${v}</button>`);g.append(btn);
+      btn.onclick=()=>{if(v===ans){ok++;buzz(15);ok>=N?done():render()}else{buzz(60);render()}}});
+  };render();
+}
+
+
+/* ===== Sesi & skrin ===== */
+let S=null;   // {team,stage,key,start,hash,phase,next,total,players,name,staff}
+let tick;
+const save=()=>store.set("session",S);
+
+function header(){
+  const chip=document.getElementById("teamChip"),tr=document.getElementById("track");
+  if(!S){chip.hidden=true;tr.hidden=true;return}
+  chip.hidden=false;chip.textContent=`Pasukan ${S.team}`;
+  tr.hidden=false;tr.innerHTML="";
+  const cur=S.phase==="finish"?9:(S.phase==="handoff"?S.stage+1:S.stage);
+  for(let i=1;i<=8;i++){const s=document.createElement("span");if(i<cur)s.className="done";else if(i===cur)s.className="now";tr.append(s)}
+}
+function busy(btn,on,label){btn.disabled=on;btn.textContent=on?"Sedang semak…":label}
+
+function home(msg){
+  clearInterval(tick);S=null;header();
+  const opts=[...Array(TEAMS)].map((_,i)=>`<option value="${i+1}">Pasukan ${i+1}</option>`).join("");
+  $app.innerHTML="";
+  const c=el(`<section class="card">
+    <div class="eyebrow">Fun Race · Permainan Berantai</div>
+    <h1>8 pekerja, 8 game, satu rantai.</h1>
+    <p>Pekerja pertama main Game 1. Bila siap, QR keluar. Pekerja seterusnya scan dengan phone sendiri. Setiap QR sekali guna, dan setiap pekerja hanya boleh main satu game.</p>
+    <ol class="list">${GAMES.map((g,i)=>`<li><b>${i+1}</b>${g.name}</li>`).join("")}</ol>
+    ${msg?`<p class="err">${esc(msg)}</p>`:""}
+    <div><label for="team">Pasukan</label><select id="team">${opts}</select></div>
+    <div><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
+    <p class="err" id="err" hidden></p>
+    <button class="btn" id="go">Mula Game 1</button>
+  </section>`);
+  $app.append(c);
+  const b=c.querySelector("#go"),err=c.querySelector("#err");
+  b.onclick=async()=>{
+    const staff=c.querySelector("#staff").value.trim();
+    if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
+    busy(b,true);err.hidden=true;
+    try{const j=await api("start",{team:+c.querySelector("#team").value,staff});
+      S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff};save();
+      try{history.replaceState(null,"",location.pathname)}catch(e){}
+      intro();
+    }catch(e){err.textContent=e.message;err.hidden=false;busy(b,false,"Mula Game 1")}
+  };
+  const m=el(`<section class="card">
+    <h2>Ada kod?</h2>
+    <p>Kalau QR tak dapat discan, taip kod di bawah QR rakan anda.</p>
+    <div class="row"><input id="manual" placeholder="cth: 4f9a2c7e1b" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
+  </section>`);
+  $app.append(m);
+  m.querySelector("#mgo").onclick=()=>{const v=m.querySelector("#manual").value.trim().toLowerCase().replace(/^.*#/,"");if(v)location.hash=v};
+  $app.append(el(`<a class="btn ghost" style="text-align:center;text-decoration:none" href="#papan">Lihat papan markah</a>`));
+}
+
+function claimView(token){
+  clearInterval(tick);S=null;header();$app.innerHTML="";
+  const c=el(`<section class="card">
+    <div class="eyebrow">QR rantai diterima</div>
+    <h1>Giliran anda!</h1>
+    <p>Masukkan no. pekerja untuk buka game pasukan anda. QR ini akan terkunci kepada anda sebaik sahaja disahkan.</p>
+    <div><label for="staff">No. pekerja anda</label><input id="staff" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
+    <p class="err" id="err" hidden></p>
+    <button class="btn" id="go">Sahkan &amp; buka game</button>
+    <a class="btn ghost" style="text-align:center;text-decoration:none" href="#">Kembali ke halaman utama</a>
+  </section>`);
+  $app.append(c);
+  const b=c.querySelector("#go"),err=c.querySelector("#err");
+  b.onclick=async()=>{
+    const staff=c.querySelector("#staff").value.trim();
+    if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
+    busy(b,true);err.hidden=true;
+    try{const j=await api("claim",{token,staff});
+      S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff};save();intro();
+    }catch(e){err.textContent=e.message;err.hidden=false;buzz([60,40,60]);busy(b,false,"Sahkan & buka game")}
+  };
+}
+
+function runClock(node,prefix=""){const u=()=>{if(node.isConnected)node.textContent=prefix+fmt(since(S.start))};u();clearInterval(tick);tick=setInterval(u,1000)}
+
+function intro(){
+  S.phase="intro";save();header();const g=GAMES[S.stage-1];$app.innerHTML="";
+  const who=S.name?`${esc(S.name)} (${esc(S.staff)})`:esc(S.staff||"");
+  const c=el(`<section class="card">
+    <div class="eyebrow">Game ${S.stage} / 8 · Pasukan ${S.team}</div>
+    <h1>${g.name}</h1><p>${g.desc}</p>
+    ${who?`<p>Pemain: <b style="color:var(--fg)">${who}</b></p>`:""}
+    <div class="timer" id="tm"></div>
+    <button class="btn" id="play">Saya sedia — MULA</button>
+  </section>`);$app.append(c);
+  runClock(c.querySelector("#tm"),"Masa pasukan: ");
+  c.querySelector("#play").onclick=play;
+}
+
+function play(){
+  S.phase="play";save();const g=GAMES[S.stage-1];$app.innerHTML="";
+  const c=el(`<section class="card"><div class="row" style="justify-content:space-between;align-items:center"><div class="eyebrow">Game ${S.stage} · ${g.name}</div><div class="timer" id="tm"></div></div><div id="box" style="display:flex;flex-direction:column;gap:14px"></div></section>`);
+  $app.append(c);runClock(c.querySelector("#tm"));
+  let fired=false;
+  g.play(c.querySelector("#box"),()=>{if(fired)return;fired=true;buzz([30,40,30]);S.phase="sending";save();sendDone()});
+}
+
+async function sendDone(){
+  clearInterval(tick);header();$app.innerHTML="";
+  const c=el(`<section class="card" style="text-align:center">
+    <div class="done-ring">✓ GAME ${S.stage} SELESAI</div>
+    <p id="msg">Menghantar keputusan ke server…</p>
+    <button class="btn" id="retry" hidden>Cuba hantar semula</button>
+  </section>`);$app.append(c);
+  const r=c.querySelector("#retry"),msg=c.querySelector("#msg");
+  r.onclick=sendDone;
+  try{const j=await api("done",{key:S.key});
+    if(j.next){S.next=j.next;S.phase="handoff";save();handoff()}
+    else{S.total=j.total;S.players=j.players||[];S.phase="finish";save();finish()}
+  }catch(e){msg.textContent=e.message+" Keputusan anda tidak hilang.";msg.className="err";r.hidden=false}
+}
+
+function handoff(){
+  clearInterval(tick);header();$app.innerHTML="";
+  const next=S.stage+1,url=BASE+"#"+S.next;
+  const c=el(`<section class="card">
+    <div class="done-ring">✓ GAME ${S.stage} SELESAI</div>
+    <h2 style="text-align:center">Serahkan kepada pekerja seterusnya</h2>
+    <p style="text-align:center">Pekerja lain scan QR ini guna <b style="color:var(--fg)">phone sendiri</b> untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>. QR ini hanya boleh digunakan sekali.</p>
+    <div class="qr" id="qr"></div>
+    <div><label>Kod manual</label><div class="code">${esc(S.next.toUpperCase())}</div></div>
+    <div class="timer" style="text-align:center" id="tm"></div>
+  </section>`);$app.append(c);
+  try{new QRCode(c.querySelector("#qr"),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
+  catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR gagal dimuat. Guna kod manual di bawah.</p>`))}
+  runClock(c.querySelector("#tm"),"Masa pasukan: ");
+}
+
+function finish(){
+  clearInterval(tick);header();$app.innerHTML="";
+  const rows=(S.players||[]).map(p=>`<tr><td>${p.stage}</td><td>${esc(p.staff)}</td><td>${esc(p.name||"")}</td></tr>`).join("");
+  const c=el(`<section class="card" style="text-align:center">
+    <div class="eyebrow">Pasukan ${S.team} · Rantai Lengkap</div>
+    <h1 style="color:var(--go)">TAMAT!</h1>
+    <p>Semua 8 game selesai. Tunjukkan skrin ini kepada fasilitator.</p>
+    <div class="big">${fmt(S.total||0)}</div>
+    <div class="tbl"><table><thead><tr><th>Game</th><th>No. pekerja</th><th>Nama</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <button class="btn ghost" id="again">Selesai — kembali ke halaman utama</button>
+  </section>`);$app.append(c);
+  c.querySelector("#again").onclick=()=>{store.set("session",null);try{history.replaceState(null,"",location.pathname)}catch(e){}home()};
+}
+
+/* Phone pemain yang sudah serah QR: tunjuk semula QR jika halaman dimuat semula */
+function resume(){
+  const f={intro,play:intro,sending:sendDone,handoff,finish}[S.phase];
+  f?f():home();
+}
+
+/* ===== Papan markah (#papan) ===== */
+let boardTimer;
+async function board(){
+  clearInterval(tick);clearInterval(boardTimer);S=null;header();$app.innerHTML="";
+  const c=el(`<section class="card">
+    <div class="eyebrow">Fasilitator</div>
+    <h1>Papan Markah</h1>
+    <p id="upd">Memuatkan…</p>
+    <div class="tbl"><table><thead><tr><th>#</th><th>Pasukan</th><th>Game siap</th><th>Masa</th></tr></thead><tbody id="tb"></tbody></table></div>
+    <a class="btn ghost" style="text-align:center;text-decoration:none" href="#">Halaman utama</a>
+  </section>`);$app.append(c);
+  const load=async()=>{
+    if(!c.isConnected){clearInterval(boardTimer);return}
+    try{const j=await api("board",{});
+      c.querySelector("#tb").innerHTML=j.teams.length?j.teams.map((t,i)=>{
+        const fin=t.total!==null;
+        return `<tr class="${fin?"fin":""}"><td>${fin?i+1:"–"}</td><td>Pasukan ${t.team}</td><td><span class="pill ${fin?"ok":""}">${t.done} / 8</span></td><td>${fin?fmt(t.total):fmt(Math.max(0,Math.floor((j.now-t.start)/1000)))+" ⏱"}</td></tr>`}).join("")
+        :`<tr><td colspan="4" style="text-align:center;color:var(--muted)">Belum ada pasukan bermula.</td></tr>`;
+      c.querySelector("#upd").textContent="Dikemas kini "+new Date().toLocaleTimeString("ms-MY")+" · auto setiap 10 saat";
+    }catch(e){c.querySelector("#upd").textContent=e.message}
+  };
+  load();boardTimer=setInterval(load,10000);
+}
+
+/* ===== Boot ===== */
+function boot(){
+  clearInterval(boardTimer);
+  const h=location.hash.slice(1).toLowerCase();
+  if(h==="papan") return board();
+  const saved=store.get("session");
+  if(saved&&saved.phase&&(h===""||h===saved.hash)){S=saved;return resume()}
+  if(/^[0-9a-z]{10}$/.test(h)) return claimView(h);
+  home(h?"Kod dalam pautan tidak sah. Minta rakan tunjukkan QR semula.":"");
+}
+window.addEventListener("hashchange",boot);
+boot();
+
+</script>
+</body>
+</html>

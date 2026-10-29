@@ -231,7 +231,7 @@ const GAMES=[
  {name:"Pam APAR",desc:"Tekan butang merah 50 kali secepat mungkin untuk 'pam' alat pemadam api.",play:gTap},
  {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
  {name:"Padam Api",desc:"Padam 20 api yang muncul secara rawak. Mula perlahan, makin lama makin laju! Salah tekan pekerja 👷 = terkunci 3 saat, tekan petak kosong = terkunci 1 saat.",play:gFire},
- {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan.",play:gOrder},
+ {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
  {name:"Tutup Injap",desc:"Injap merah muncul di tempat rawak. Tekan secepat mungkin untuk tutup 20 injap. Tekan tersasar = terkunci 1 saat.",play:gValve},
  {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
  {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 2 perkataan.",play:gWord},
@@ -330,10 +330,23 @@ function gMemory(box,done){
         else setTimeout(()=>{[a,c].forEach(x=>{x.classList.add("back");x.textContent=""});open=[];lock=false},650)}}});
 }
 function gOrder(box,done){
-  let next=1;const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b></p>`);box.append(info);
+  const N=20;let next=1;
+  const calm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b> · nombor bertukar tempat setiap kali betul</p>`);box.append(info);
   const g=el(`<div class="grid g4"></div>`);box.append(g);
-  shuffle([...Array(20)].map((_,k)=>k+1)).forEach(n=>{const b=el(`<button class="tile">${n}</button>`);g.append(b);
-    b.onclick=()=>{if(n===next){b.classList.add("hit");next++;buzz(10);info.querySelector("b").textContent=next>20?"✓":next;if(next>20)done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}});
+  const cells=[...Array(N)].map(()=>{const b=el(`<button class="tile"></button>`);g.append(b);return b});
+  const deal=()=>{
+    const left=[...Array(N-next+1)].map((_,k)=>next+k),slots=shuffle(cells);
+    cells.forEach(c=>{c.dataset.n="";c.textContent="";c.classList.add("hit")});
+    left.forEach((n,i)=>{const c=slots[i];c.dataset.n=n;c.textContent=n;c.classList.remove("hit")});
+    if(!calm&&g.animate)g.animate([{opacity:.3},{opacity:1}],{duration:150});
+  };
+  cells.forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const n=+b.dataset.n;if(!n||next>N)return;
+    if(n===next){next++;buzz(10);info.querySelector("b").textContent=next>N?"✓":next;
+      if(next>N){cells.forEach(c=>{c.textContent="";c.classList.add("hit")});done();return}
+      deal()}
+    else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}));
+  deal();
 }
 function gSimon(box,done){
   const cols=["var(--stop)","var(--go)","var(--blue)","var(--hazard)"];const L=5;

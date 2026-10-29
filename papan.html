@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1b1a">
+<title>Papan Kedudukan Fun Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap">
+<style>
+/* Layout: race-control screen — one lane per team, 8-segment track, server-synced clocks; stacks to cards on phone. Single dark look by design (TV/projector). */
+:root{
+  --ink:#0d1b1a;
+  --panel:#152a28;
+  --line:#2b4b48;
+  --fg:#eef5f1;
+  --muted:#9fb9b3;
+  --hazard:#ffc93c;
+  --go:#3ddc97;
+  --stop:#ff5c5c;
+  --gold:#ffc93c;
+  --silver:#cfd8e0;
+  --bronze:#d8925a;
+  --display:"Bungee","Arial Black",Impact,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+html{background:var(--ink);font-size:clamp(14px,1.05vw,24px)}
+body{margin:0;background:var(--ink);color:var(--fg);font-family:var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 16px}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--hazard);outline-offset:2px}
+.wrap{max-width:1800px;margin:0 auto;display:flex;flex-direction:column;gap:1rem}
+.hazard{height:.6rem;border-radius:0 0 6px 6px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 14px,var(--ink) 14px 28px)}
+
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding-top:.6rem}
+.brand{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.b1{font-family:var(--display);font-size:2.4rem;line-height:1;color:var(--hazard);text-wrap:balance}
+.b2{font-size:.8rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+.meta{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.live{display:inline-flex;align-items:center;gap:.45rem;font-weight:800;font-size:.85rem;letter-spacing:.14em;padding:.4rem .8rem;border-radius:999px;border:1px solid var(--line);background:var(--panel)}
+.live i{width:.65rem;height:.65rem;border-radius:50%;background:var(--go);box-shadow:0 0 0 0 var(--go);animation:beat 1.6s infinite}
+.live.off i{background:var(--stop);animation:none}
+.live.demo i{background:var(--hazard)}
+.upd{font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.fs{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:.4rem .7rem;font-size:.85rem;font-weight:700}
+.demo-banner{font-size:.85rem;font-weight:800;letter-spacing:.06em;color:#1b1500;padding:.5rem .9rem;border-radius:10px;background:repeating-linear-gradient(-45deg,var(--hazard) 0 12px,#e0ad1f 12px 24px)}
+
+.summary{display:flex;gap:.6rem;flex-wrap:wrap}
+.summary span{font-size:.9rem;color:var(--muted);padding:.45rem .8rem;border-radius:10px;background:var(--panel);border:1px solid var(--line);display:inline-flex;gap:.4rem;align-items:baseline}
+.summary b{font-family:var(--display);font-weight:400;font-size:1.15rem;color:var(--fg);font-variant-numeric:tabular-nums}
+.summary .s-fin b{color:var(--hazard)}
+.summary .s-run b{color:var(--go)}
+.summary .s-best{color:var(--fg)}
+
+.cols,.row{display:grid;grid-template-columns:4rem minmax(0,1.25fr) minmax(0,2fr) 10rem;gap:1.2rem;align-items:center}
+.cols{padding:0 1.2rem;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.cols span:last-child{text-align:right}
+.board{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.6rem}
+.row{position:relative;overflow:hidden;padding:.95rem 1.2rem .95rem 1.5rem;border-radius:16px;background:var(--panel);border:1px solid var(--line)}
+.row::before{content:"";position:absolute;left:0;top:0;bottom:0;width:.45rem;background:var(--tc);box-shadow:inset -1px 0 0 rgba(255,255,255,.25)}
+.row.fin{background-color:var(--panel);background-image:linear-gradient(90deg,color-mix(in srgb,var(--tc) 26%,transparent),transparent 65%)}
+.row.wait{opacity:.6}
+
+.rank{width:3.2rem;height:3.2rem;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:1.5rem;background:var(--ink);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.r1 .rank{background:var(--gold);color:#2a1d00;border-color:var(--gold);box-shadow:0 0 1.2rem rgba(255,201,60,.45)}
+.r2 .rank{background:var(--silver);color:#1b2229;border-color:var(--silver)}
+.r3 .rank{background:var(--bronze);color:#2a1406;border-color:var(--bronze)}
+
+.who{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.name{font-family:var(--display);font-size:1.55rem;line-height:1.05;display:flex;align-items:center;gap:.55rem;min-width:0}
+.name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sw{flex:none;width:.85rem;height:.85rem;border-radius:50%;background:var(--tc);box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.state{font-size:.95rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.state b{color:var(--fg)}
+.lap{font-variant-numeric:tabular-nums;color:var(--hazard);font-weight:700;margin-left:.3rem}
+
+.track{display:grid;grid-template-columns:repeat(8,1fr);gap:.35rem}
+.seg{height:2.4rem;border-radius:8px;background:var(--ink);border:1px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;transition:background .4s,border-color .4s}
+.seg.done{background:var(--tc);border-color:transparent;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.seg.now{border:2px solid var(--hazard);color:var(--hazard);background:rgba(255,201,60,.14);animation:glow 1.2s ease-in-out infinite}
+.seg.next{border:2px dashed var(--hazard);color:var(--hazard)}
+
+.time{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem}
+.clock{font-family:var(--display);font-size:2.3rem;line-height:1;font-variant-numeric:tabular-nums}
+.fin .clock{color:var(--hazard)}
+.wait .clock{color:var(--muted)}
+.tag{font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:inline-flex;align-items:center;gap:.35rem}
+.play .tag{color:var(--go)}
+.play .tag::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:var(--go);animation:beat 1.6s infinite}
+.fin .tag{color:var(--hazard)}
+
+.ticker{display:flex;align-items:center;gap:.8rem;padding:.7rem 1rem;border-radius:14px;background:var(--panel);border:1px solid var(--line);min-width:0}
+.tk-label{flex:none;font-size:.72rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--hazard)}
+.ticker ul{list-style:none;margin:0;padding:0;display:flex;gap:1.4rem;overflow-x:auto;min-width:0;scrollbar-width:none}
+.ticker li{flex:none;font-size:.9rem;color:var(--muted);display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap}
+.ticker li b{color:var(--fg)}
+.ticker li time{font-variant-numeric:tabular-nums;font-size:.8rem}
+.ticker li.new{animation:slidein .5s ease-out}
+.ticker li.big b.ev{color:var(--hazard)}
+.ticker .dot{width:.6rem;height:.6rem;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.35)}
+
+.toast{position:fixed;left:50%;top:50%;z-index:20;width:min(92vw,46rem);transform:translate(-50%,-50%);padding:2rem 1.6rem;border-radius:24px;text-align:center;
+  background-color:var(--panel);background-image:linear-gradient(160deg,color-mix(in srgb,var(--tc) 70%,var(--ink)),var(--ink));border:3px solid var(--hazard);box-shadow:0 2rem 6rem rgba(0,0,0,.6);display:flex;flex-direction:column;gap:.5rem;align-items:center}
+.toast.in{animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
+.t-k{font-size:.9rem;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:var(--hazard)}
+.t-n{font-family:var(--display);font-size:3rem;line-height:1.05;text-wrap:balance;display:flex;gap:.7rem;align-items:center;justify-content:center}
+.t-n .sw{width:1.4rem;height:1.4rem}
+.t-c{font-family:var(--display);font-size:4.4rem;line-height:1;color:var(--hazard);font-variant-numeric:tabular-nums}
+.t-r{font-size:1.1rem;font-weight:700}
+
+@keyframes beat{0%{box-shadow:0 0 0 0 rgba(61,220,151,.6)}70%{box-shadow:0 0 0 .5rem rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}
+@keyframes glow{50%{background:rgba(255,201,60,.32)}}
+@keyframes slidein{from{opacity:0;transform:translateX(-1rem)}}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}}
+
+@media (max-width:760px){
+  html{font-size:15px}
+  .b1{font-size:1.7rem}
+  .cols{display:none}
+  .row{grid-template-columns:2.6rem minmax(0,1fr) auto;gap:.6rem .8rem;padding:.8rem .8rem .8rem 1.1rem}
+  .rank{width:2.4rem;height:2.4rem;font-size:1.05rem}
+  .name{font-size:1.15rem}
+  .state{font-size:.82rem;white-space:normal}
+  .rank{grid-row:1}.who{grid-row:1}.time{grid-column:3;grid-row:1}
+  .track{grid-column:1/-1;grid-row:2;gap:.25rem}
+  .seg{height:1.8rem;font-size:.75rem;border-radius:6px}
+  .clock{font-size:1.5rem}
+  .tag{font-size:.65rem}
+  .ticker{flex-direction:column;align-items:flex-start}
+  .ticker ul{flex-direction:column;gap:.45rem;width:100%}
+  .ticker li{white-space:normal}
+  .t-n{font-size:2rem}.t-c{font-size:3rem}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+body{padding-top:env(safe-area-inset-top,0px)}
+</style>
+</head>
+<body>
+<div class="hazard"></div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="b1">Rantai Fun Race</span><span class="b2">Papan Kedudukan Live</span></div>
+    <div class="meta">
+      <span class="live" id="live"><i></i><span id="liveTxt">MENYAMBUNG</span></span>
+      <span class="upd" id="upd"></span>
+      <button class="fs" id="fs" type="button" hidden>Skrin penuh</button>
+    </div>
+  </header>
+  <div class="demo-banner" id="demoBanner" hidden>DATA CONTOH · simulasi dipercepat 8× untuk pratonton. Papan sebenar membaca data langsung bila dibuka dari GitHub Pages.</div>
+  <section class="summary" id="summary" aria-live="polite"></section>
+  <div class="cols" aria-hidden="true"><span>#</span><span>Pasukan</span><span>Kemajuan · Game 1 – 8</span><span>Masa</span></div>
+  <ol class="board" id="board"></ol>
+  <footer class="ticker"><span class="tk-label">Terkini</span><ul id="ticker"><li>Menunggu aktiviti pertama…</li></ul></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+/* ===== Konfigurasi ===== */
+const API_URL = "https://script.google.com/macros/s/AKfycbyRE8htk8mPauI3yhOiXBK58VgtsF398IiTkRU50Zl3afz4svDJpZxvvUbyU2yvJwa-nw/exec";
+const POLL_MS = 5000;
+const TEAMS = [
+  {name:"Obsidian Elite", color:"#e3b21f"},
+  {name:"Red Gladiators", color:"#d8362f"},
+  {name:"Onyx",           color:"#1e1e28"},
+  {name:"Navy Titan",     color:"#2b5aa6"},
+  {name:"Pink Storm",     color:"#cf4d86"},
+  {name:"Diamond X",      color:"#93a7c8"},
+];
+const GAMES = ["Pam APAR","Padan Gambar","Padam Api","Susun 1–20","Tutup Injap","Ingat Isyarat","Eja Semula","Tolok Tekanan"];
+
+const host = location.hostname;
+const REAL_HOST = /\.github\.io$/.test(host) || host==="localhost" || host==="127.0.0.1";
+const DEMO = location.hash==="#demo" || (!REAL_HOST && location.hash!=="#live");
+
+/* ===== Pembantu ===== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const key = s => String(s||"").trim().toLowerCase();
+const teamColor = n => (TEAMS.find(t=>key(t.name)===key(n))||{color:"#9fb9b3"}).color;
+const fmt = s => { s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=String(s%60).padStart(2,"0");
+  return h ? `${h}:${String(m).padStart(2,"0")}:${x}` : `${String(m).padStart(2,"0")}:${x}`; };
+const lapFmt = s => { s=Math.max(0,Math.floor(s)); return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`; };
+const tod = ms => new Date(ms).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZone:"Asia/Kuala_Lumpur"});
+const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ===== Simulasi (mod demo sahaja) ===== */
+const sim = (() => {
+  const SPEED = 8;
+  const mulberry = a => () => { a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; };
+  let loop = 0, t0 = Date.now(), base = Date.now(), P = plan();
+  function plan(){
+    const r = mulberry(7 + loop*13);
+    const starts = [6,20,38,58,84,175];
+    return TEAMS.map((tm,i) => {
+      let c = starts[i]; const st = [];
+      for (let g=1; g<=8; g++){ const claimed=c, done=claimed+16+r()*44; st.push({g,claimed,done,player:`SCI-${String(400+i*12+g).padStart(4,"0")}`}); c = done+8+r()*24; }
+      return {team:tm.name, startAt:starts[i], st};
+    });
+  }
+  const T = () => (Date.now()-t0)*SPEED/1000;
+  return {
+    now: () => base + T()*1000,
+    board(){
+      let t = T();
+      const end = Math.max(...P.map(p=>p.st[7].done));
+      if (t > end + 50){ loop++; t0=Date.now(); base=Date.now(); P=plan(); t=0; }
+      const ms = s => base + s*1000;
+      const teams = P.filter(p=>t>=p.startAt).map(p => {
+        const dn = p.st.filter(s=>s.done<=t), cur = p.st.find(s=>s.claimed<=t && s.done>t), fin = dn.length===8;
+        return {team:p.team, status:fin?"tamat":"berjalan", total:fin?Math.round(p.st[7].done-p.startAt):null, start:ms(p.startAt),
+          finish:fin?ms(p.st[7].done):null, done:dn.length, stage:cur?cur.g:null, player:cur?cur.player:"",
+          since:cur?ms(cur.claimed):null, last:dn.length?ms(dn[dn.length-1].done):null};
+      });
+      return {ok:true, teams, now:ms(t)};
+    }
+  };
+})();
+
+/* ===== Keadaan ===== */
+let data = null, off = 0, lastNow = 0, firstLoad = true;
+let prev = new Map();
+const rows = new Map();
+const events = [];
+const nowS = () => DEMO ? sim.now() : Date.now() + off;
+
+/* ===== Ambil data ===== */
+async function poll(){
+  try{
+    let j;
+    if (DEMO) j = sim.board();
+    else {
+      const r = await fetch(API_URL + "?action=board&t=" + Date.now(), {cache:"no-store"});
+      j = await r.json();
+    }
+    if (!j || !j.ok) throw new Error((j && j.error) || "Server tidak memberi jawapan yang sah.");
+    if (!DEMO) off = j.now - Date.now();
+    if (j.now < lastNow){ prev = new Map(); firstLoad = true; events.length = 0; }
+    lastNow = j.now;
+    diff(j); data = j; render(); setLive(true);
+  }catch(e){
+    setLive(false, e && e.message && !/fetch|network|json/i.test(e.message) ? e.message : "Tiada sambungan. Cuba semula…");
+  }finally{
+    setTimeout(poll, DEMO ? 600 : POLL_MS);
+  }
+}
+
+function setLive(ok, msg){
+  const l = $("live");
+  l.classList.toggle("off", !ok); l.classList.toggle("demo", DEMO);
+  $("liveTxt").textContent = DEMO ? "DEMO" : ok ? "LIVE" : "TERPUTUS";
+  $("upd").textContent = ok ? `Dikemas kini ${tod(nowS())}` : msg;
+}
+
+/* ===== Susunan ===== */
+function ordered(j){
+  const started = j.teams.map(t=>Object.assign({}, t));
+  const seen = new Set(started.map(t=>key(t.team)));
+  started.sort((a,b) => {
+    const fa=a.total!=null, fb=b.total!=null;
+    if (fa!==fb) return fa ? -1 : 1;
+    if (fa) return (a.total-b.total) || ((a.finish||0)-(b.finish||0));
+    return (b.done-a.done) || ((a.last ?? a.start) - (b.last ?? b.start));
+  });
+  const waiting = TEAMS.filter(t=>!seen.has(key(t.name))).map(t=>({team:t.name, status:"belum", total:null, done:0, start:null}));
+  return started.concat(waiting);
+}
+
+/* ===== Peristiwa ===== */
+function diff(j){
+  const list = ordered(j);
+  if (!firstLoad){
+    j.teams.forEach(t => {
+      const p = prev.get(key(t.team));
+      if (!p){ addEvent(t.team, "mula Game 1", j.now); return; }
+      for (let n=p.done+1; n<=Math.min(t.done,7); n++) addEvent(t.team, `siap Game ${n}`, t.last || j.now);
+      if (t.total!=null && p.total==null){
+        const rank = list.findIndex(x=>key(x.team)===key(t.team)) + 1;
+        addEvent(t.team, `TAMAT ${fmt(t.total)}`, t.finish || j.now, true);
+        toast(t, rank);
+      }
+    });
+  }
+  prev = new Map(j.teams.map(t=>[key(t.team), t]));
+  firstLoad = false;
+}
+function addEvent(team, text, ms, big){
+  events.unshift({team, text, ms, big, fresh:true});
+  events.length = Math.min(events.length, 12);
+  const ul = $("ticker"); ul.innerHTML = "";
+  events.forEach(e => {
+    const li = document.createElement("li");
+    li.className = (e.big?"big ":"") + (e.fresh?"new":"");
+    li.innerHTML = `<i class="dot" style="background:${teamColor(e.team)}"></i><b>${esc(e.team)}</b> <b class="ev">${esc(e.text)}</b><time>${tod(e.ms)}</time>`;
+    ul.append(li); e.fresh = false;
+  });
+}
+
+/* ===== Toast tamat ===== */
+const tq = []; let tBusy = false;
+function toast(t, rank){ tq.push({t, rank}); if (!tBusy) nextToast(); }
+function nextToast(){
+  const x = tq.shift(), el = $("toast");
+  if (!x){ tBusy=false; el.hidden=true; return; }
+  tBusy = true;
+  el.style.setProperty("--tc", teamColor(x.t.team));
+  el.innerHTML = `<div class="t-k">Rantai lengkap!</div>
+    <div class="t-n"><i class="sw" style="--tc:${teamColor(x.t.team)}"></i>${esc(x.t.team)}</div>
+    <div class="t-c">${fmt(x.t.total)}</div>
+    <div class="t-r">Kedudukan semasa: #${x.rank}</div>`;
+  el.hidden = false; el.classList.remove("in"); void el.offsetWidth; el.classList.add("in");
+  setTimeout(nextToast, 5500);
+}
+
+/* ===== Paparan ===== */
+function makeRow(name){
+  const li = document.createElement("li");
+  li.style.setProperty("--tc", teamColor(name));
+  li.innerHTML = `<div class="rank"></div>
+    <div class="who"><div class="name"><i class="sw"></i><span>${esc(name)}</span></div><div class="state"></div></div>
+    <div class="track">${GAMES.map((g,i)=>`<span class="seg" title="Game ${i+1}: ${esc(g)}">${i+1}</span>`).join("")}</div>
+    <div class="time"><span class="clock"></span><span class="tag"></span></div>`;
+  li._rank = li.querySelector(".rank"); li._state = li.querySelector(".state");
+  li._segs = [...li.querySelectorAll(".seg")]; li._clock = li.querySelector(".clock"); li._tag = li.querySelector(".tag");
+  return li;
+}
+function fillRow(el, t, i){
+  const fin = t.total!=null, wait = t.status==="belum", play = !fin && !wait;
+  const detail = "stage" in t;
+  const cur = play ? (detail ? t.stage : t.done+1) : null;
+  const next = t.done + 1;
+  el.className = "row" + (fin?" fin":"") + (wait?" wait":"") + (play?" play":"") + (fin && i<3 ? ` r${i+1}` : "");
+  el._rank.textContent = wait ? "–" : i+1;
+  el._segs.forEach((s,k) => {
+    const n = k+1;
+    s.className = "seg" + (n<=t.done?" done":"") + (play && cur===n ? " now":"") + (play && cur==null && n===next ? " next":"");
+  });
+  el.dataset.start = t.start || "";
+  if (fin){
+    el._state.innerHTML = t.finish ? `Tamat pada <b>${tod(t.finish)}</b>` : `<b>Tamat</b>`;
+    el._clock.textContent = fmt(t.total); el._tag.textContent = "Tamat";
+  } else if (wait){
+    el._state.textContent = "Belum mula";
+    el._clock.textContent = "--:--"; el._tag.textContent = "";
+  } else {
+    if (cur){
+      el._state.innerHTML = `<b>Game ${cur}</b> · ${esc(GAMES[cur-1])}${t.player?` · ${esc(t.player)}`:""}${detail && t.since?`<span class="lap" data-since="${t.since}"></span>`:""}`;
+    } else {
+      el._state.innerHTML = `<b>Serah QR</b> → Game ${next} · ${esc(GAMES[next-1])}${t.last?`<span class="lap" data-since="${t.last}"></span>`:""}`;
+    }
+    el._tag.textContent = "Berjalan";
+  }
+}
+function render(){
+  const list = ordered(data), board = $("board");
+  const before = new Map(); rows.forEach((el,k)=>before.set(k, el.getBoundingClientRect().top));
+  list.forEach((t,i) => {
+    const k = key(t.team);
+    let el = rows.get(k);
+    if (!el){ el = makeRow(t.team); rows.set(k, el); }
+    fillRow(el, t, i); board.append(el);
+  });
+  if (!reduced) rows.forEach((el,k) => {
+    const b = before.get(k); if (b==null) return;
+    const d = b - el.getBoundingClientRect().top;
+    if (Math.abs(d) > 2) el.animate([{transform:`translateY(${d}px)`},{transform:"none"}], {duration:700, easing:"cubic-bezier(.2,.8,.2,1)"});
+  });
+  summary(list); tick();
+}
+function summary(list){
+  const fin = list.filter(t=>t.total!=null), run = list.filter(t=>t.total==null && t.status!=="belum"), wait = list.filter(t=>t.status==="belum");
+  const best = fin[0];
+  $("summary").innerHTML = `<span><b>${list.length}</b> pasukan</span>
+    <span class="s-fin"><b>${fin.length}</b> tamat</span>
+    <span class="s-run"><b>${run.length}</b> sedang main</span>
+    <span><b>${wait.length}</b> belum mula</span>
+    ${best?`<span class="s-best">Terpantas setakat ini: <b style="font-size:1rem">${esc(best.team)}</b> · ${fmt(best.total)}</span>`:""}`;
+}
+function tick(){
+  const n = nowS();
+  rows.forEach(el => {
+    if (el.classList.contains("play") && el.dataset.start) el._clock.textContent = fmt((n - Number(el.dataset.start))/1000);
+    el.querySelectorAll(".lap").forEach(l => l.textContent = lapFmt((n - Number(l.dataset.since))/1000));
+  });
+}
+
+/* ===== Skrin besar ===== */
+if (document.fullscreenEnabled){
+  const b = $("fs"); b.hidden = false;
+  b.onclick = () => { (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(()=>{}); };
+}
+async function wake(){ try{ if (navigator.wakeLock && document.visibilityState==="visible") await navigator.wakeLock.request("screen"); }catch(e){} }
+document.addEventListener("visibilitychange", wake); wake();
+
+$("demoBanner").hidden = !DEMO;
+data = {ok:true, teams:[], now:nowS()}; render();
+setInterval(tick, 500);
+poll();
+</script>
+</body>
+</html>

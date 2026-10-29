@@ -97,6 +97,74 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.fin{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:22px;display:flex;flex-direction:column}
+.confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+.fin-band{position:relative;padding:22px 20px 18px;background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 55%,var(--ink)),var(--ink));border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;text-align:center;align-items:center;background-color:var(--ink)}
+.fin-flag{width:56px;height:20px;border-radius:4px;background:repeating-conic-gradient(var(--fg) 0 25%,#10201f 0 50%) 0 0/10px 10px;box-shadow:0 0 0 2px var(--fg)}
+.fin-kicker{font-size:12px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--hazard)}
+.fin-team{font-family:var(--display);font-size:clamp(24px,8vw,34px);line-height:1.05;text-wrap:balance;display:flex;align-items:center;gap:10px;justify-content:center}
+.fin-team .dot{width:18px;height:18px}
+.fin-time{padding:22px 20px 10px;text-align:center;display:flex;flex-direction:column;gap:4px}
+.fin-label{font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.fin-clock{font-family:var(--display);font-size:clamp(64px,22vw,96px);line-height:1;color:var(--hazard);font-variant-numeric:tabular-nums;text-shadow:0 4px 0 rgba(0,0,0,.35)}
+.fin-sub{font-size:13px;color:var(--muted)}
+.fin-list{list-style:none;margin:8px 16px 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.fin-list li{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-radius:12px;background:var(--ink);border:1px solid var(--line)}
+.fin-list li.best{border-color:var(--go)}
+.fin-no{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:15px;background:var(--line);color:var(--fg)}
+.fin-list li.best .fin-no{background:var(--go);color:#062b1b}
+.fin-body{display:flex;flex-direction:column;gap:3px;min-width:0}
+.fin-game{font-weight:800;font-size:14px}
+.fin-game em{font-style:normal;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#062b1b;background:var(--go);padding:2px 6px;border-radius:999px;vertical-align:2px;margin-left:4px}
+.fin-who{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fin-bar{height:5px;border-radius:3px;background:var(--line);overflow:hidden}
+.fin-bar i{display:block;height:100%;background:var(--tc);border-radius:3px}
+.fin-secs{font-family:var(--display);font-size:15px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.fin-note{margin:14px 20px 0;text-align:center;font-size:13px}
+.fin .btn{margin:14px 16px 16px;width:auto}
+
+.lock{position:absolute;inset:-8px;z-index:5;border-radius:16px;background:rgba(16,32,31,.92);backdrop-filter:blur(2px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;border:2px solid var(--stop);animation:lockin .15s ease-out}
+.lock-ico{font-size:40px}
+.lock-t{font-weight:800;color:var(--stop);font-size:16px;padding:0 12px}
+.lock-n{font-family:var(--display);font-size:64px;color:var(--fg);line-height:1;font-variant-numeric:tabular-nums}
+.lock-s{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+@keyframes lockin{from{opacity:0;transform:scale(1.04)}}
+
+.valve-area{position:relative;height:min(62vh,420px);border-radius:16px;background:var(--ink);border:1px solid var(--line);overflow:hidden;touch-action:manipulation}
+.valve{position:absolute;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:transparent;display:grid;place-items:center;padding:0}
+.valve-face{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ff8a8a,var(--stop));box-shadow:0 4px 0 #9e2f2f;display:grid;place-items:center}
+.valve span{width:40px;height:40px;border-radius:50%;border:5px solid #fff;position:relative}
+.valve span::before,.valve span::after{content:"";position:absolute;left:50%;top:50%;width:46px;height:6px;margin:-3px 0 0 -23px;background:#fff;border-radius:3px}
+.valve span::after{transform:rotate(90deg)}
+.valve:active .valve-face{transform:translateY(3px);box-shadow:0 1px 0 #9e2f2f}
+.valve-pop.miss{color:var(--stop)}
+.valve-pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--display);font-size:28px;color:var(--go);pointer-events:none;animation:pop .35s ease-out forwards}
+@keyframes pop{to{opacity:0;transform:translate(-50%,-90%) scale(1.3)}}
+
+.fire-cell{font-size:34px;transition:background .1s}
+.fire-cell.hot{background:#3a2316;border-color:#ff8a3c}
+.fire-cell.person{background:#1d3550;border-color:var(--blue)}
+.fire-cell.ouch{background:var(--stop)}
+.gauge{position:relative;height:64px;border-radius:14px;background:linear-gradient(90deg,#2a4441,#3b2a2a);border:1px solid var(--line);overflow:hidden}
+.gauge .zone{position:absolute;top:0;bottom:0;background:var(--go);opacity:.85;border-radius:6px}
+.gauge .needle{position:absolute;top:-4px;bottom:-4px;width:6px;margin-left:-3px;background:var(--hazard);border-radius:3px;box-shadow:0 0 10px var(--hazard)}
+.gauge.miss{animation:shake .3s}
+.gmsg{text-align:center;font-weight:600}
+
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.team{display:flex;align-items:center;gap:10px;padding:12px;border-radius:12px;background:var(--ink);border:1px solid var(--line);border-left:5px solid var(--tc);font-weight:700;font-size:14px;text-align:left;min-width:0}
+.team span{min-width:0;overflow-wrap:anywhere}
+.team.on{background:var(--panel);outline:2px solid var(--hazard);outline-offset:-2px}
+.dot{display:inline-block;flex:none;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.35);vertical-align:-1px;margin-right:2px}
+.chip{display:inline-flex;align-items:center;gap:6px}
+
+.rules{background:var(--ink);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.rules h2{font-size:18px;color:var(--hazard)}
+.rules ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.rules li{font-size:14px;line-height:1.5;color:var(--muted)}
+.rules li::marker{font-weight:800;color:var(--hazard)}
+.rules b{color:var(--fg)}
+.rule-note{font-size:13px;color:var(--stop);font-weight:600}
 body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-area-inset-bottom,0px))}
 </style>
 </head>
@@ -113,7 +181,23 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 <script>
 /* ===== Konfigurasi ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbyRE8htk8mPauI3yhOiXBK58VgtsF398IiTkRU50Zl3afz4svDJpZxvvUbyU2yvJwa-nw/exec";
-const TEAMS = 12;
+const TEAMS = [
+  {name:"Obsidian Elite", color:"#e3b21f"},
+  {name:"Red Gladiators", color:"#d8362f"},
+  {name:"Onyx",           color:"#1e1e28"},
+  {name:"Navy Titan",     color:"#2b5aa6"},
+  {name:"Pink Storm",     color:"#cf4d86"},
+  {name:"Diamond X",      color:"#93a7c8"},
+];
+const teamColor=n=>(TEAMS.find(t=>t.name.toLowerCase()===String(n).toLowerCase())||{color:"#9fb9b3"}).color;
+const dot=n=>`<i class="dot" style="background:${teamColor(n)}"></i>`;
+function teamPicker(){
+  const w=el(`<div><label>Pasukan</label><div class="teams" role="radiogroup"></div></div>`);
+  let sel=null;const box=w.querySelector(".teams");
+  TEAMS.forEach(t=>{const b=el(`<button type="button" class="team" role="radio" aria-checked="false" style="--tc:${t.color}">${dot(t.name)}<span>${t.name}</span></button>`);
+    b.onclick=()=>{sel=t.name;box.querySelectorAll(".team").forEach(x=>{x.classList.toggle("on",x===b);x.setAttribute("aria-checked",x===b)})};box.append(b)});
+  w.value=()=>sel;return w;
+}
 const BASE = location.origin + location.pathname;
 
 /* ===== Storan phone ===== */
@@ -145,15 +229,89 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 /* ===== 8 Game ===== */
 const GAMES=[
  {name:"Pam APAR",desc:"Tekan butang merah 50 kali secepat mungkin untuk 'pam' alat pemadam api.",play:gTap},
- {name:"Padan PPE",desc:"Buka kad dan padankan 6 pasang peralatan keselamatan.",play:gMemory},
- {name:"Kuiz HSE",desc:"Jawab 3 soalan keselamatan dengan betul. Salah? Cuba lagi.",play:gQuiz},
- {name:"Susun 1–16",desc:"Tekan nombor 1 hingga 16 mengikut turutan.",play:gOrder},
- {name:"Refleks Lampu",desc:"Tekan bila skrin bertukar HIJAU. Perlu 3 kali bawah 0.7 saat.",play:gReact},
+ {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
+ {name:"Padam Api",desc:"Padam 20 api yang muncul secara rawak. Mula perlahan, makin lama makin laju! Salah tekan pekerja 👷 = terkunci 3 saat, tekan petak kosong = terkunci 1 saat.",play:gFire},
+ {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan.",play:gOrder},
+ {name:"Tutup Injap",desc:"Injap merah muncul di tempat rawak. Tekan secepat mungkin untuk tutup 20 injap. Tekan tersasar = terkunci 1 saat.",play:gValve},
  {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
  {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 2 perkataan.",play:gWord},
- {name:"Kira Pantas",desc:"Jawab 6 soalan matematik dengan betul.",play:gMath},
+ {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
 ];
 
+function gValve(box,done){
+  const N=20;let n=0,locked=false;
+  const s=el(`<p>Injap ditutup: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const area=el(`<div class="valve-area"></div>`);box.append(area);
+  const v=el(`<button class="valve" aria-label="Tutup injap"><i class="valve-face"><span></span></i></button>`);area.append(v);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan tersasar = terkunci 1 saat</p>`));
+  area.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||n>=N)return;locked=true;buzz([60,40,60]);
+    const p=el(`<span class="valve-pop miss" style="left:${(e.offsetX/area.clientWidth*100)||50}%;top:${(e.offsetY/area.clientHeight*100)||50}%">✕</span>`);area.append(p);setTimeout(()=>p.remove(),350);
+    await lockOut(box,1,"Tersasar!");locked=false});
+  let lx=50,ly=50;
+  const move=()=>{let x,y;do{x=8+Math.random()*84;y=10+Math.random()*80}while(Math.hypot(x-lx,y-ly)<25);lx=x;ly=y;v.style.left=x+"%";v.style.top=y+"%"};
+  move();
+  v.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(locked||n>=N)return;n++;buzz(12);
+    s.querySelector("b").textContent=n;box.querySelector(".bar i").style.width=(n/N*100)+"%";
+    const p=el(`<span class="valve-pop" style="left:${lx}%;top:${ly}%">✓</span>`);area.append(p);setTimeout(()=>p.remove(),350);
+    if(n>=N){v.hidden=true;setTimeout(done,300)}else move()});
+}
+function lockOut(box,secs,why){
+  return new Promise(res=>{
+    box.style.position="relative";
+    const o=el(`<div class="lock" role="alert"><div class="lock-ico">🔒</div><div class="lock-t">${why}</div><div class="lock-n">${secs}</div><div class="lock-s">saat</div></div>`);
+    box.append(o);let left=secs;
+    const t=setInterval(()=>{left--;if(left<=0||!box.isConnected){clearInterval(t);o.remove();res()}else o.querySelector(".lock-n").textContent=left},1000);
+  });
+}
+function gFire(box,done){
+  const N=20;let hits=0,over=false,locked=false,spawn;
+  const s=el(`<p>Api dipadam: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const g=el(`<div class="grid g3"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan pekerja 👷 = kunci 3 saat · Tekan petak kosong = kunci 1 saat</p>`));
+  const cells=[...Array(9)].map(()=>{const b=el(`<button class="tile fire-cell" aria-label="Petak"></button>`);g.append(b);return b});
+  const upd=()=>{s.querySelector("b").textContent=hits;box.querySelector(".bar i").style.width=(hits/N*100)+"%"};
+  const clear=b=>{clearTimeout(b._t);b.dataset.k="";b.textContent="";b.classList.remove("hot","person")};
+  const lock=async(secs,why)=>{locked=true;buzz([80,50,80]);await lockOut(box,secs,why);locked=false};
+  cells.forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();if(over||locked)return;
+    if(b.dataset.k==="fire"){hits++;buzz(15);clear(b);b.textContent="💨";setTimeout(()=>{if(!b.dataset.k)b.textContent=""},250);upd();
+      if(hits>=N){over=true;clearTimeout(spawn);cells.forEach(clear);setTimeout(done,300)}}
+    else if(b.dataset.k==="person"){clear(b);b.textContent="✋";b.classList.add("ouch");setTimeout(()=>{b.classList.remove("ouch");if(!b.dataset.k)b.textContent=""},400);lock(3,"Anda tersembur pekerja!")}
+    else{b.classList.add("ouch");setTimeout(()=>b.classList.remove("ouch"),300);lock(1,"Tiada api di situ")}
+  }));
+  const next=()=>{
+    if(over||!box.isConnected)return;
+    const free=cells.filter(b=>!b.dataset.k);
+    if(free.length){
+      const b=free[Math.random()*free.length|0];const fire=Math.random()<0.75;
+      b.dataset.k=fire?"fire":"person";b.textContent=fire?"🔥":"👷";b.classList.add(fire?"hot":"person");
+      b._t=setTimeout(()=>clear(b),fire?Math.max(650,1600-hits*48):1400);
+    }
+    spawn=setTimeout(next,Math.max(340,1000-hits*33));   // mula perlahan, makin laju ikut api dipadam
+  };
+  spawn=setTimeout(next,600);
+}
+function gGauge(box,done){
+  const widths=[28,25,22,19,17,15,13,11],N=widths.length;let ok=0,pos=0,dir=1,speed=0.9,zone=0,last=0,live=true,locked=false;
+  const s=el(`<p>Berjaya: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  const tr=el(`<div class="gauge"><div class="zone"></div><div class="needle"></div></div>`);box.append(tr);
+  const msg=el(`<p class="gmsg">Tekan KUNCI bila jarum dalam zon hijau. Terlepas = kunci 2 saat.</p>`);box.append(msg);
+  const btn=el(`<button class="btn" style="font-size:22px;padding:20px">KUNCI</button>`);box.append(btn);
+  const z=tr.querySelector(".zone"),n=tr.querySelector(".needle");
+  const place=()=>{const w=widths[ok];zone=6+Math.random()*(88-w);z.style.left=zone+"%";z.style.width=w+"%"};place();
+  const frame=t=>{if(!live||!box.isConnected)return;const dt=last?Math.min(40,t-last):16;last=t;
+    pos+=dir*speed*dt/16;if(pos>=100){pos=100;dir=-1}if(pos<=0){pos=0;dir=1}n.style.left=pos+"%";requestAnimationFrame(frame)};
+  requestAnimationFrame(frame);
+  btn.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||!live)return;
+    const w=widths[ok];
+    if(pos>=zone&&pos<=zone+w){ok++;s.querySelector("b").textContent=ok;buzz(25);
+      if(ok>=N){live=false;msg.textContent="Tekanan stabil!";setTimeout(done,400);return}
+      msg.textContent=`Tepat! ${N-ok} lagi, zon makin kecil…`;speed+=0.18;place()}
+    else{locked=true;buzz([80,50,80]);tr.classList.remove("miss");void tr.offsetWidth;tr.classList.add("miss");
+      await lockOut(box,2,"Terlepas zon hijau!");locked=false;msg.textContent="Cuba lagi!"}
+  });
+}
 function gTap(box,done){
   let n=0;const N=50;
   box.append(el(`<div class="bar"><i id="b"></i></div>`));
@@ -162,57 +320,20 @@ function gTap(box,done){
   p.addEventListener("pointerdown",e=>{e.preventDefault();if(n>=N)return;n++;c.textContent=n;box.querySelector("#b").style.width=(n/N*100)+"%";buzz(10);if(n>=N)done()});
 }
 function gMemory(box,done){
-  const icons=["⛑️","🧤","🥽","🦺","🧯","👢"];
+  const icons=["🍉","🚗","⚽","🎸","🌴","🐠","🏠","⭐"];
   const deck=shuffle([...icons,...icons]);let open=[],matched=0,lock=false;
   const g=el(`<div class="grid g4"></div>`);box.append(g);
   deck.forEach((ic,i)=>{const b=el(`<button class="tile back" aria-label="Kad ${i+1}"></button>`);b.dataset.ic=ic;g.append(b);
     b.onclick=()=>{if(lock||b.classList.contains("ok")||open.includes(b))return;b.classList.remove("back");b.textContent=ic;open.push(b);
       if(open.length===2){lock=true;const[a,c]=open;
-        if(a.dataset.ic===c.dataset.ic){a.classList.add("ok");c.classList.add("ok");open=[];lock=false;matched++;buzz(20);if(matched===6)setTimeout(done,350)}
+        if(a.dataset.ic===c.dataset.ic){a.classList.add("ok");c.classList.add("ok");open=[];lock=false;matched++;buzz(20);if(matched===icons.length)setTimeout(done,350)}
         else setTimeout(()=>{[a,c].forEach(x=>{x.classList.add("back");x.textContent=""});open=[];lock=false},650)}}});
-}
-const QBANK=[
- ["Warna topi keselamatan untuk pelawat biasanya?",["Putih","Hitam","Ungu"],0],
- ["Akta utama keselamatan pekerjaan di Malaysia?",["OSHA 1994","Akta Jalan 1987","Akta Kastam 1967"],0],
- ["Langkah pertama bila nampak kebakaran kecil?",["Bunyikan penggera","Ambil gambar","Tunggu penyelia"],0],
- ["APAR jenis CO2 sesuai untuk kebakaran...?",["Peralatan elektrik","Kertas sahaja","Minyak masak dalam kuali besar"],0],
- ["Apakah maksud PPE?",["Personal Protective Equipment","Plant Process Engineering","Permit Penilaian Ekstra"],0],
- ["Sebelum kerja panas (hot work) perlu ada...?",["Permit kerja","Kopi","Muzik"],0],
- ["Titik berkumpul kecemasan dipanggil...?",["Assembly point","Check point","Break point"],0],
- ["HIRARC digunakan untuk...?",["Mengenal pasti bahaya & menilai risiko","Mengira gaji","Menjadual cuti"],0],
- ["Teknik PASS untuk APAR: P bermaksud?",["Pull (tarik pin)","Push","Pause"],0],
-];
-function gQuiz(box,done){
-  const qs=shuffle(QBANK).slice(0,3);let i=0;
-  const render=()=>{box.innerHTML="";const [q,opts]=qs[i];
-    box.append(el(`<div class="eyebrow">Soalan ${i+1} / 3</div>`));box.append(el(`<h2 style="font-size:19px;font-family:var(--body);font-weight:800">${q}</h2>`));
-    const g=el(`<div class="grid"></div>`);box.append(g);
-    shuffle(opts.map((o,k)=>[o,k])).forEach(([o,k])=>{const b=el(`<button class="opt">${o}</button>`);g.append(b);
-      b.onclick=()=>{if(k===0){buzz(20);i++;i<3?render():done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("bad");buzz([40,40,40])}}})};
-  render();
 }
 function gOrder(box,done){
   let next=1;const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b></p>`);box.append(info);
   const g=el(`<div class="grid g4"></div>`);box.append(g);
-  shuffle([...Array(16)].map((_,k)=>k+1)).forEach(n=>{const b=el(`<button class="tile">${n}</button>`);g.append(b);
-    b.onclick=()=>{if(n===next){b.classList.add("hit");next++;buzz(10);info.querySelector("b").textContent=next>16?"✓":next;if(next>16)done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}});
-}
-function gReact(box,done){
-  let ok=0,state="idle",t0=0,timer;
-  const s=el(`<p>Berjaya: <b style="color:var(--go)">0</b> / 3</p>`);box.append(s);
-  const pad=el(`<button class="react"></button>`);box.append(pad);
-  const set=(bg,fg,txt)=>{pad.style.background=bg;pad.style.color=fg;pad.textContent=txt};
-  const ready=()=>{state="idle";set("var(--line)","var(--fg)","Tekan untuk mula")};
-  ready();
-  pad.addEventListener("pointerdown",e=>{e.preventDefault();
-    if(state==="idle"){state="wait";set("var(--stop)","#fff","Tunggu hijau…");timer=setTimeout(()=>{state="go";t0=performance.now();set("var(--go)","#062b1b","TEKAN!")},1200+Math.random()*2200)}
-    else if(state==="wait"){clearTimeout(timer);state="msg";set("var(--hazard)","#1b1500","Terlalu awal! Tekan untuk cuba lagi");buzz(80);setTimeout(()=>state="idle",400)}
-    else if(state==="go"){const ms=Math.round(performance.now()-t0);
-      if(ms<=700){ok++;s.querySelector("b").textContent=ok;buzz(20);if(ok>=3){state="end";set("var(--go)","#062b1b",`${ms} ms ✓`);setTimeout(done,500);return}set("var(--panel)","var(--fg)",`${ms} ms ✓ — tekan untuk seterusnya`)}
-      else set("var(--panel)","var(--fg)",`${ms} ms — terlalu lambat, tekan lagi`);
-      state="msg";setTimeout(()=>state="idle",350)}
-    else if(state==="idle"){}
-  });
+  shuffle([...Array(20)].map((_,k)=>k+1)).forEach(n=>{const b=el(`<button class="tile">${n}</button>`);g.append(b);
+    b.onclick=()=>{if(n===next){b.classList.add("hit");next++;buzz(10);info.querySelector("b").textContent=next>20?"✓":next;if(next>20)done()}else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}});
 }
 function gSimon(box,done){
   const cols=["var(--stop)","var(--go)","var(--blue)","var(--hazard)"];const L=5;
@@ -245,19 +366,6 @@ function gWord(box,done){
     box.append(el(`<p style="text-align:center;font-size:13px">Huruf salah = mula semula perkataan</p>`));
   };render();
 }
-function gMath(box,done){
-  let ok=0;const N=6;
-  const render=()=>{box.innerHTML="";
-    const ops=[["+",(a,b)=>a+b],["−",(a,b)=>a-b],["×",(a,b)=>a*b]];const [sym,f]=ops[Math.random()*3|0];
-    let a=sym==="×"?2+(Math.random()*8|0):10+(Math.random()*40|0),b=sym==="×"?2+(Math.random()*8|0):1+(Math.random()*20|0);
-    const ans=f(a,b);const opts=new Set([ans]);while(opts.size<4)opts.add(ans+((Math.random()*10|0)-5||7));
-    box.append(el(`<div class="eyebrow">Betul ${ok} / ${N}</div>`));
-    box.append(el(`<div class="big" style="font-size:44px">${a} ${sym} ${b}</div>`));
-    const g=el(`<div class="grid g2"></div>`);box.append(g);
-    shuffle([...opts]).forEach(v=>{const btn=el(`<button class="opt" style="text-align:center;font-size:22px">${v}</button>`);g.append(btn);
-      btn.onclick=()=>{if(v===ans){ok++;buzz(15);ok>=N?done():render()}else{buzz(60);render()}}});
-  };render();
-}
 
 
 /* ===== Sesi & skrin ===== */
@@ -268,7 +376,7 @@ const save=()=>store.set("session",S);
 function header(){
   const chip=document.getElementById("teamChip"),tr=document.getElementById("track");
   if(!S){chip.hidden=true;tr.hidden=true;return}
-  chip.hidden=false;chip.textContent=`Pasukan ${S.team}`;
+  chip.hidden=false;chip.innerHTML=`${dot(S.team)}${esc(S.team)}`;
   tr.hidden=false;tr.innerHTML="";
   const cur=S.phase==="finish"?9:(S.phase==="handoff"?S.stage+1:S.stage);
   for(let i=1;i<=8;i++){const s=document.createElement("span");if(i<cur)s.className="done";else if(i===cur)s.className="now";tr.append(s)}
@@ -277,26 +385,41 @@ function busy(btn,on,label){btn.disabled=on;btn.textContent=on?"Sedang semak…"
 
 function home(msg){
   clearInterval(tick);S=null;header();
-  const opts=[...Array(TEAMS)].map((_,i)=>`<option value="${i+1}">Pasukan ${i+1}</option>`).join("");
   $app.innerHTML="";
   const c=el(`<section class="card">
     <div class="eyebrow">Fun Race · Permainan Berantai</div>
     <h1>8 pekerja, 8 game, satu rantai.</h1>
     <p>Pekerja pertama main Game 1. Bila siap, QR keluar. Pekerja seterusnya scan dengan phone sendiri. Setiap QR sekali guna, dan setiap pekerja hanya boleh main satu game.</p>
     <ol class="list">${GAMES.map((g,i)=>`<li><b>${i+1}</b>${g.name}</li>`).join("")}</ol>
+    <div class="rules">
+      <h2>Peraturan Permainan</h2>
+      <ol>
+        <li><b>8 pekerja, 8 game.</b> Setiap pekerja main <b>satu game sahaja</b>, mengikut giliran Game 1 hingga Game 8.</li>
+        <li><b>Guna phone sendiri.</b> Satu phone hanya boleh digunakan untuk satu game bagi setiap pasukan.</li>
+        <li><b>Mula:</b> Pekerja pertama pilih pasukan, masukkan no. pekerja, dan tekan <i>Mula Game 1</i>.</li>
+        <li><b>Serah rantai:</b> Bila game siap, QR akan keluar. Pekerja seterusnya scan QR itu dengan kamera phone sendiri dan masukkan no. pekerja.</li>
+        <li><b>QR sekali guna.</b> Setiap QR hanya boleh discan oleh seorang pekerja. Kalau tak dapat scan, taip kod manual di bawah QR.</li>
+        <li><b>Masa:</b> Jam bermula bila Game 1 dimulakan dan berhenti bila Game 8 siap. Pasukan dengan masa <b>paling singkat</b> menang.</li>
+        <li><b>Hanya pemain menyentuh phone.</b> Rakan sepasukan boleh bersorak dan beri tunjuk ajar secara lisan sahaja.</li>
+        <li><b>Dilarang:</b> main bagi pihak orang lain, guna no. pekerja orang lain, atau tukar browser/mod incognito untuk elak sekatan.</li>
+        <li><b>Tamat:</b> Tunjukkan skrin <i>TAMAT</i> kepada fasilitator untuk semakan nama pemain.</li>
+      </ol>
+      <p class="rule-note">Melanggar peraturan boleh menyebabkan pasukan dibatalkan. Keputusan fasilitator adalah muktamad.</p>
+    </div>
     ${msg?`<p class="err">${esc(msg)}</p>`:""}
-    <div><label for="team">Pasukan</label><select id="team">${opts}</select></div>
     <div><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
     <p class="err" id="err" hidden></p>
     <button class="btn" id="go">Mula Game 1</button>
   </section>`);
   $app.append(c);
+  const tp=teamPicker();c.querySelector("#staff").parentElement.before(tp);
   const b=c.querySelector("#go"),err=c.querySelector("#err");
   b.onclick=async()=>{
-    const staff=c.querySelector("#staff").value.trim();
+    const staff=c.querySelector("#staff").value.trim(),team=tp.value();
+    if(!team){err.textContent="Sila pilih pasukan anda.";err.hidden=false;return}
     if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     busy(b,true);err.hidden=true;
-    try{const j=await api("start",{team:+c.querySelector("#team").value,staff});
+    try{const j=await api("start",{team,staff});
       S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff};save();
       try{history.replaceState(null,"",location.pathname)}catch(e){}
       intro();
@@ -309,7 +432,7 @@ function home(msg){
   </section>`);
   $app.append(m);
   m.querySelector("#mgo").onclick=()=>{const v=m.querySelector("#manual").value.trim().toLowerCase().replace(/^.*#/,"");if(v)location.hash=v};
-  $app.append(el(`<a class="btn ghost" style="text-align:center;text-decoration:none" href="#papan">Lihat papan markah</a>`));
+  $app.append(el(`<a class="btn ghost" style="text-align:center;text-decoration:none" href="papan.html">Lihat papan kedudukan live</a>`));
 }
 
 function claimView(token){
@@ -341,7 +464,7 @@ function intro(){
   S.phase="intro";save();header();const g=GAMES[S.stage-1];$app.innerHTML="";
   const who=S.name?`${esc(S.name)} (${esc(S.staff)})`:esc(S.staff||"");
   const c=el(`<section class="card">
-    <div class="eyebrow">Game ${S.stage} / 8 · Pasukan ${S.team}</div>
+    <div class="eyebrow">Game ${S.stage} / 8 · ${esc(S.team)}</div>
     <h1>${g.name}</h1><p>${g.desc}</p>
     ${who?`<p>Pemain: <b style="color:var(--fg)">${who}</b></p>`:""}
     <div class="timer" id="tm"></div>
@@ -392,16 +515,61 @@ function handoff(){
 
 function finish(){
   clearInterval(tick);header();$app.innerHTML="";
-  const rows=(S.players||[]).map(p=>`<tr><td>${p.stage}</td><td>${esc(p.staff)}</td><td>${esc(p.name||"")}</td></tr>`).join("");
-  const c=el(`<section class="card" style="text-align:center">
-    <div class="eyebrow">Pasukan ${S.team} · Rantai Lengkap</div>
-    <h1 style="color:var(--go)">TAMAT!</h1>
-    <p>Semua 8 game selesai. Tunjukkan skrin ini kepada fasilitator.</p>
-    <div class="big">${fmt(S.total||0)}</div>
-    <div class="tbl"><table><thead><tr><th>Game</th><th>No. pekerja</th><th>Nama</th></tr></thead><tbody>${rows}</tbody></table></div>
-    <button class="btn ghost" id="again">Selesai — kembali ke halaman utama</button>
-  </section>`);$app.append(c);
-  c.querySelector("#again").onclick=()=>{store.set("session",null);try{history.replaceState(null,"",location.pathname)}catch(e){}home()};
+  const rows=GAMES.map((g,i)=>{const p=(S.players||[]).find(x=>x.stage===i+1)||{};
+    const secs=p.claimed_ms&&p.done_ms?Math.max(0,Math.round((p.done_ms-p.claimed_ms)/1000)):null;
+    return {stage:i+1,game:g.name,who:p.staff?(p.name?`${p.name} · ${p.staff}`:p.staff):"",secs}});
+  finishView({team:S.team,total:S.total||0,rows,
+    note:"Tunjukkan skrin ini kepada fasilitator untuk semakan nama pemain.",
+    actionLabel:"Selesai — kembali ke halaman utama",
+    onAction:()=>{store.set("session",null);try{history.replaceState(null,"",location.pathname)}catch(e){}home()}});
+}
+/* ===== Skrin TAMAT ===== */
+function finishView({team,total,rows,note,actionLabel,onAction}){
+  const tc=teamColor(team);
+  const known=rows.filter(r=>r.secs!=null);
+  const max=Math.max(1,...known.map(r=>r.secs));
+  const fastest=known.length?known.reduce((a,b)=>b.secs<a.secs?b:a):null;
+  const endAt=new Date().toLocaleTimeString("ms-MY",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const c=el(`<section class="fin" style="--tc:${tc}">
+    <canvas class="confetti" aria-hidden="true"></canvas>
+    <div class="fin-band">
+      <div class="fin-flag" aria-hidden="true"></div>
+      <div class="fin-kicker">Rantai lengkap</div>
+      <div class="fin-team">${dot(team)}${esc(team)}</div>
+    </div>
+    <div class="fin-time">
+      <div class="fin-label">Masa keseluruhan</div>
+      <div class="fin-clock">${fmt(total)}</div>
+      <div class="fin-sub">8 game · 8 pemain · tamat ${endAt}</div>
+    </div>
+    <ol class="fin-list">${rows.map(r=>`
+      <li class="${fastest&&r===fastest?"best":""}">
+        <span class="fin-no">${r.stage}</span>
+        <span class="fin-body">
+          <span class="fin-game">${esc(r.game)}${fastest&&r===fastest?` <em>terpantas</em>`:""}</span>
+          ${r.who?`<span class="fin-who">${esc(r.who)}</span>`:""}
+          <span class="fin-bar"><i style="width:${r.secs!=null?Math.max(6,r.secs/max*100):0}%"></i></span>
+        </span>
+        <span class="fin-secs">${r.secs!=null?fmt(r.secs):"—"}</span>
+      </li>`).join("")}
+    </ol>
+    <p class="fin-note">${note}</p>
+    <button class="btn" id="finAct">${actionLabel}</button>
+  </section>`);
+  $app.append(c);
+  c.querySelector("#finAct").onclick=onAction;
+  confetti(c.querySelector(".confetti"),[tc,"#ffc93c","#3ddc97","#eef5f1"]);
+}
+function confetti(cv,colors){
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches){cv.remove();return}
+  const ctx=cv.getContext("2d"),dpr=window.devicePixelRatio||1;
+  const W=cv.offsetWidth,H=cv.offsetHeight;cv.width=W*dpr;cv.height=H*dpr;ctx.scale(dpr,dpr);
+  const P=[...Array(90)].map(()=>({x:W/2+(Math.random()-.5)*60,y:H*0.18,vx:(Math.random()-.5)*9,vy:-Math.random()*9-3,r:Math.random()*6+4,a:Math.random()*6,va:(Math.random()-.5)*.3,c:colors[Math.random()*colors.length|0]}));
+  let t0=performance.now();
+  const step=t=>{if(!cv.isConnected)return;const e=t-t0;ctx.clearRect(0,0,W,H);
+    P.forEach(p=>{p.vy+=0.22;p.vx*=0.99;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.a);ctx.globalAlpha=Math.max(0,1-e/3200);ctx.fillStyle=p.c;ctx.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);ctx.restore()});
+    if(e<3300)requestAnimationFrame(step);else cv.remove()};
+  requestAnimationFrame(step);
 }
 
 /* Phone pemain yang sudah serah QR: tunjuk semula QR jika halaman dimuat semula */
@@ -416,7 +584,7 @@ async function board(){
   clearInterval(tick);clearInterval(boardTimer);S=null;header();$app.innerHTML="";
   const c=el(`<section class="card">
     <div class="eyebrow">Fasilitator</div>
-    <h1>Papan Markah</h1>
+    <h1>Papan Kedudukan</h1>
     <p id="upd">Memuatkan…</p>
     <div class="tbl"><table><thead><tr><th>#</th><th>Pasukan</th><th>Game siap</th><th>Masa</th></tr></thead><tbody id="tb"></tbody></table></div>
     <a class="btn ghost" style="text-align:center;text-decoration:none" href="#">Halaman utama</a>
@@ -426,7 +594,7 @@ async function board(){
     try{const j=await api("board",{});
       c.querySelector("#tb").innerHTML=j.teams.length?j.teams.map((t,i)=>{
         const fin=t.total!==null;
-        return `<tr class="${fin?"fin":""}"><td>${fin?i+1:"–"}</td><td>Pasukan ${t.team}</td><td><span class="pill ${fin?"ok":""}">${t.done} / 8</span></td><td>${fin?fmt(t.total):fmt(Math.max(0,Math.floor((j.now-t.start)/1000)))+" ⏱"}</td></tr>`}).join("")
+        return `<tr class="${fin?"fin":""}"><td>${fin?i+1:"–"}</td><td>${dot(t.team)} ${esc(t.team)}</td><td><span class="pill ${fin?"ok":""}">${t.done} / 8</span></td><td>${fin?fmt(t.total):fmt(Math.max(0,Math.floor((j.now-t.start)/1000)))+" ⏱"}</td></tr>`}).join("")
         :`<tr><td colspan="4" style="text-align:center;color:var(--muted)">Belum ada pasukan bermula.</td></tr>`;
       c.querySelector("#upd").textContent="Dikemas kini "+new Date().toLocaleTimeString("ms-MY")+" · auto setiap 10 saat";
     }catch(e){c.querySelector("#upd").textContent=e.message}

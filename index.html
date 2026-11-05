@@ -85,6 +85,9 @@ select,input{font:inherit;font-size:17px;width:100%;padding:12px;border-radius:1
 .letters{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .letters button{width:52px;height:56px;border-radius:12px;background:var(--hazard);color:#1b1500;font-family:var(--display);font-size:24px}
 .letters button.used{visibility:hidden}
+.slot.long{gap:4px}
+.slot.long{flex-wrap:nowrap}
+.slot.long span{width:28px;height:38px;font-size:17px;border-radius:6px}
 .done-ring{font-family:var(--display);font-size:20px;color:var(--go);text-align:center}
 @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -97,6 +100,15 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.cm-prompt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;border-radius:14px;background:var(--ink);border:1px solid var(--line)}
+.cm-k{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.cm-w{font-family:var(--display);font-size:clamp(40px,13vw,58px);line-height:1.05}
+.cm-prompt.cm-new{animation:cmflash .25s ease-out}
+@keyframes cmflash{from{transform:scale(.92);opacity:.4}}
+.cm-btn{height:84px;border-radius:14px;color:#10201f;font-family:var(--display);font-size:22px;letter-spacing:.02em;box-shadow:inset 0 -5px 0 rgba(0,0,0,.18)}
+.cm-btn:active{transform:translateY(2px)}
+.cm-btn.cm-bad{outline:4px solid var(--fg);animation:shake .3s}
+
 .fin{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:22px;display:flex;flex-direction:column}
 .confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
 .fin-band{position:relative;padding:22px 20px 18px;background:linear-gradient(160deg,color-mix(in srgb,var(--tc) 55%,var(--ink)),var(--ink));border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:6px;text-align:center;align-items:center;background-color:var(--ink)}
@@ -228,13 +240,13 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 
 /* ===== 8 Game ===== */
 const GAMES=[
- {name:"Pam APAR",desc:"Tekan butang merah 50 kali secepat mungkin untuk 'pam' alat pemadam api.",play:gTap},
+ {name:"Color Match Rush",desc:"Perkataan warna keluar dalam warna yang berbeza. Tekan butang yang TULISANNYA sama dengan perkataan itu. Abaikan warna! Perlu 12 betul. Salah tekan = terkunci 1 saat.",play:gColor},
  {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
  {name:"Padam Api",desc:"Padam 20 api yang muncul secara rawak. Mula perlahan, makin lama makin laju! Salah tekan pekerja 👷 = terkunci 3 saat, tekan petak kosong = terkunci 1 saat.",play:gFire},
  {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
  {name:"Tutup Injap",desc:"Injap merah muncul di tempat rawak. Tekan secepat mungkin untuk tutup 20 injap. Tekan tersasar = terkunci 1 saat.",play:gValve},
  {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
- {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 2 perkataan.",play:gWord},
+ {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 3 perkataan: 5 huruf, 8 huruf dan 10 huruf. Huruf salah = mula semula perkataan itu.",play:gWord},
  {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
 ];
 
@@ -312,12 +324,22 @@ function gGauge(box,done){
       await lockOut(box,2,"Terlepas zon hijau!");locked=false;msg.textContent="Cuba lagi!"}
   });
 }
-function gTap(box,done){
-  let n=0;const N=50;
-  box.append(el(`<div class="bar"><i id="b"></i></div>`));
-  const c=el(`<div class="big">0</div>`);box.append(c);
-  const p=el(`<button class="pump" id="pump">PAM!</button>`);box.append(p);
-  p.addEventListener("pointerdown",e=>{e.preventDefault();if(n>=N)return;n++;c.textContent=n;box.querySelector("#b").style.width=(n/N*100)+"%";buzz(10);if(n>=N)done()});
+function gWord(box,done){
+  const words=["KASUT","PENGGERA","KEMALANGAN"];let wi=0;   // perkataan tetap: 5, 8, 10 huruf
+  const render=()=>{box.innerHTML="";const w=words[wi];let typed="";
+    box.append(el(`<div class="eyebrow">Perkataan ${wi+1} / ${words.length}</div>`));
+    const slot=el(`<div class="slot${w.length>7?" long":""}"></div>`);box.append(slot);
+    [...w].forEach(()=>slot.append(el(`<span></span>`)));
+    const lt=el(`<div class="letters"></div>`);box.append(lt);
+    let mix=shuffle([...w]);if(mix.join("")===w)mix=mix.reverse();
+    const btns=mix.map(ch=>{const b=el(`<button>${ch}</button>`);lt.append(b);return b});
+    const reset=()=>{typed="";btns.forEach(b=>b.classList.remove("used"));slot.querySelectorAll("span").forEach(s=>s.textContent="")};
+    btns.forEach(b=>b.onclick=()=>{const ch=b.textContent;
+      if(w[typed.length]===ch){b.classList.add("used");slot.children[typed.length].textContent=ch;typed+=ch;buzz(10);
+        if(typed===w){wi++;setTimeout(()=>wi<words.length?render():done(),400)}}
+      else{buzz(60);slot.animate?slot.animate([{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"none"}],{duration:250}):0;reset()}});
+    box.append(el(`<p style="text-align:center;font-size:13px">Huruf salah = mula semula perkataan</p>`));
+  };render();
 }
 function gMemory(box,done){
   const icons=["🍉","🚗","⚽","🎸","🌴","🐠","🏠","⭐"];
@@ -362,22 +384,35 @@ function gSimon(box,done){
     pos++;if(pos===seq.length){if(seq.length>=L){busy=true;s.textContent="Hebat!";setTimeout(done,500);return}seq.push(Math.random()*4|0);setTimeout(round,400)}});
   fresh();
 }
-function gWord(box,done){
-  const words=shuffle(["APAR","GOGAL","PERMIT","SARUNG","TOPI","KASUT","PENGGERA","RISIKO"]).slice(0,2);let wi=0;
-  const render=()=>{box.innerHTML="";const w=words[wi];let typed="";
-    box.append(el(`<div class="eyebrow">Perkataan ${wi+1} / 2</div>`));
-    const slot=el(`<div class="slot"></div>`);box.append(slot);
-    [...w].forEach(()=>slot.append(el(`<span></span>`)));
-    const lt=el(`<div class="letters"></div>`);box.append(lt);
-    let mix=shuffle([...w]);if(mix.join("")===w)mix=mix.reverse();
-    const btns=mix.map(ch=>{const b=el(`<button>${ch}</button>`);lt.append(b);return b});
-    const reset=()=>{typed="";btns.forEach(b=>b.classList.remove("used"));slot.querySelectorAll("span").forEach(s=>s.textContent="")};
-    btns.forEach(b=>b.onclick=()=>{const ch=b.textContent;
-      if(w[typed.length]===ch){b.classList.add("used");slot.children[typed.length].textContent=ch;typed+=ch;buzz(10);
-        if(typed===w){wi++;setTimeout(()=>wi<2?render():done(),400)}}
-      else{buzz(60);slot.animate?slot.animate([{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"none"}],{duration:250}):0;reset()}});
-    box.append(el(`<p style="text-align:center;font-size:13px">Huruf salah = mula semula perkataan</p>`));
-  };render();
+function gColor(box,done){
+  const N=12;let ok=0,locked=false,target=null;
+  const C=[{n:"MERAH",h:"#ff5c5c"},{n:"BIRU",h:"#4aa8ff"},{n:"HIJAU",h:"#3ddc97"},{n:"KUNING",h:"#ffc93c"}];
+  const s=el(`<p>Betul: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const pr=el(`<div class="cm-prompt"><span class="cm-k">Tekan butang bertulis</span><span class="cm-w"></span></div>`);box.append(pr);
+  const g=el(`<div class="grid g2"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Baca <b style="color:var(--fg)">tulisan</b>, abaikan warna. Salah tekan = terkunci 1 saat.</p>`));
+  const w=pr.querySelector(".cm-w");
+  const derange=()=>{let p;do{p=shuffle(C)}while(p.some((c,i)=>c===C[i]));return p};
+  const round=()=>{
+    let t;do{t=C[Math.random()*4|0]}while(t===target&&Math.random()<.7);target=t;
+    const ink=shuffle(C.filter(c=>c!==t))[0];
+    w.textContent=t.n;w.style.color=ink.h;
+    pr.classList.remove("cm-new");void pr.offsetWidth;pr.classList.add("cm-new");
+    const labels=shuffle(C),paint=derange();
+    g.innerHTML="";
+    labels.forEach((c,i)=>{
+      const b=el(`<button class="cm-btn">${c.n}</button>`);
+      b.style.background=paint[C.indexOf(c)].h;
+      b.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||ok>=N)return;
+        if(c===target){ok++;buzz(12);s.querySelector("b").textContent=ok;box.querySelector(".bar i").style.width=(ok/N*100)+"%";
+          if(ok>=N){g.innerHTML="";w.textContent="✓";w.style.color="var(--go)";setTimeout(done,300)}else round()}
+        else{locked=true;buzz([80,50,80]);b.classList.add("cm-bad");await lockOut(box,1,"Salah warna!");locked=false;b.classList.remove("cm-bad")}
+      });
+      g.append(b);
+    });
+  };
+  round();
 }
 
 

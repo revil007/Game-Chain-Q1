@@ -162,6 +162,10 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .valve span::after{transform:rotate(90deg)}
 .valve:active .valve-face{transform:translateY(3px);box-shadow:0 1px 0 #9e2f2f}
 .valve-pop.miss{color:var(--stop)}
+.ink-btn{height:72px;border-radius:14px;background:var(--ink);border:1px solid var(--line);color:var(--fg);font-family:var(--display);font-size:20px}
+.ink-btn:active{transform:translateY(2px)}
+.grid.odd{gap:6px}
+.odd-t{aspect-ratio:1;max-width:100%;border-radius:10px;border:0}
 .mole-board{width:100%;max-width:340px;align-self:center;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .hole{aspect-ratio:1;max-width:100%;border-radius:50%;position:relative;overflow:hidden;padding:0;cursor:pointer;
   background:radial-gradient(circle at 50% 40%,#2a1f14,#0c0805 70%);border:3px solid #3a2b1c;box-shadow:inset 0 10px 18px rgba(0,0,0,.6);touch-action:manipulation}
@@ -277,12 +281,12 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 
 /* ===== 8 Game ===== */
 const GAMES=[
- {name:"Color Match Rush",desc:"Perkataan warna keluar dalam warna yang berbeza. Tekan butang yang TULISANNYA sama dengan perkataan itu. Abaikan warna! Perlu 12 betul. Salah tekan = terkunci 1 saat.",play:gColor},
+ {name:"Warna Dakwat",desc:"Perkataan warna ditulis dengan warna lain. Tekan butang mengikut WARNA tulisan, bukan perkataannya. Perlu 12 betul. Salah = terkunci 5 saat.",play:gInk},
  {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
  {name:"Whack-a-Mole",desc:"Tekan tikus 🐹 yang muncul dari lubang secepat mungkin. Perlu 22 kena. Tikus makin laju. Tekan lubang kosong = terkunci 5 saat.",play:gMole},
  {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
  {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 1 saat.",play:gValve},
- {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
+ {name:"Cari Yang Lain",desc:"Satu petak warnanya sedikit berbeza. Tekan petak itu. 10 pusingan, grid makin besar dan beza warna makin halus. Salah = terkunci 5 saat.",play:gOdd},
  {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 3 perkataan: 5 huruf, 8 huruf dan 10 huruf. Huruf salah = mula semula perkataan itu.",play:gWord},
  {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
 ];
@@ -443,47 +447,47 @@ function gOrder(box,done){
     else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}));
   deal();
 }
-function gSimon(box,done){
-  const cols=["var(--stop)","var(--go)","var(--blue)","var(--hazard)"];const L=5;
-  let seq=[],pos=0,busy=true;
-  const s=el(`<p id="sm">Perhatikan…</p>`);box.append(s);
-  const g=el(`<div class="grid g2"></div>`);box.append(g);
-  const pads=cols.map((c,i)=>{const b=el(`<button class="pad" aria-label="Warna ${i+1}" style="background:${c}"></button>`);g.append(b);return b});
-  const flash=(i,ms=380)=>new Promise(r=>{pads[i].classList.add("lit");setTimeout(()=>{pads[i].classList.remove("lit");setTimeout(r,160)},ms)});
-  const round=async()=>{busy=true;pos=0;s.textContent=`Perhatikan… (${seq.length}/${L})`;await new Promise(r=>setTimeout(r,500));for(const i of seq)await flash(i);busy=false;s.textContent=`Giliran anda (${seq.length}/${L})`};
-  const fresh=()=>{seq=[Math.random()*4|0];round()};
-  pads.forEach((p,i)=>p.onclick=async()=>{if(busy)return;flash(i,180);
-    if(i!==seq[pos]){busy=true;buzz([60,40,60]);s.textContent="Salah! Mula semula…";setTimeout(fresh,900);return}
-    pos++;if(pos===seq.length){if(seq.length>=L){busy=true;s.textContent="Hebat!";setTimeout(done,500);return}seq.push(Math.random()*4|0);setTimeout(round,400)}});
-  fresh();
+function gOdd(box,done){
+  const N=10;let r=0,locked=false;
+  const s=el(`<p>Pusingan <b style="color:var(--hazard)">1</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const g=el(`<div class="grid odd"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan petak yang warnanya sedikit berbeza. Salah = terkunci 5 saat.</p>`));
+  const round=()=>{
+    const size=r<3?3:r<6?4:5,diff=Math.max(4,22-r*2);         // beza warna makin halus
+    const h=Math.random()*360|0,sat=55+Math.random()*20|0,l=45+Math.random()*12|0,lighter=Math.random()<.5;
+    const odd=Math.random()*size*size|0;
+    g.style.gridTemplateColumns=`repeat(${size},1fr)`;g.innerHTML="";
+    for(let i=0;i<size*size;i++){const b=el(`<button class="odd-t" aria-label="Petak ${i+1}"></button>`);
+      b.style.background=`hsl(${h} ${sat}% ${i===odd?(lighter?l+diff/2:l-diff/2):l}%)`;
+      b.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked)return;
+        if(i===odd){r++;buzz(12);s.querySelector("b").textContent=Math.min(r+1,N);box.querySelector(".bar i").style.width=(r/N*100)+"%";
+          if(r>=N){g.innerHTML="";setTimeout(done,250)}else round()}
+        else{locked=true;buzz([80,50,80]);await lockOut(box,5,"Bukan petak itu!");locked=false}});
+      g.append(b)}
+  };
+  round();
 }
-function gColor(box,done){
+function gInk(box,done){
   const N=12;let ok=0,locked=false,target=null;
   const C=[{n:"MERAH",h:"#ff5c5c"},{n:"BIRU",h:"#4aa8ff"},{n:"HIJAU",h:"#3ddc97"},{n:"KUNING",h:"#ffc93c"}];
   const s=el(`<p>Betul: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
   box.append(el(`<div class="bar"><i></i></div>`));
-  const pr=el(`<div class="cm-prompt"><span class="cm-k">Tekan butang bertulis</span><span class="cm-w"></span></div>`);box.append(pr);
+  const pr=el(`<div class="cm-prompt"><span class="cm-k">Tekan WARNA tulisan ini</span><span class="cm-w"></span></div>`);box.append(pr);
   const g=el(`<div class="grid g2"></div>`);box.append(g);
-  box.append(el(`<p style="text-align:center;font-size:13px">Baca <b style="color:var(--fg)">tulisan</b>, abaikan warna. Salah tekan = terkunci 1 saat.</p>`));
+  box.append(el(`<p style="text-align:center;font-size:13px">Jangan baca perkataan. Lihat warnanya. Salah = terkunci 5 saat.</p>`));
   const w=pr.querySelector(".cm-w");
-  const derange=()=>{let p;do{p=shuffle(C)}while(p.some((c,i)=>c===C[i]));return p};
   const round=()=>{
-    let t;do{t=C[Math.random()*4|0]}while(t===target&&Math.random()<.7);target=t;
-    const ink=shuffle(C.filter(c=>c!==t))[0];
-    w.textContent=t.n;w.style.color=ink.h;
+    let ink;do{ink=C[Math.random()*4|0]}while(ink===target&&Math.random()<.7);target=ink;
+    const word=shuffle(C.filter(c=>c!==ink))[0];w.textContent=word.n;w.style.color=ink.h;
     pr.classList.remove("cm-new");void pr.offsetWidth;pr.classList.add("cm-new");
-    const labels=shuffle(C),paint=derange();
     g.innerHTML="";
-    labels.forEach((c,i)=>{
-      const b=el(`<button class="cm-btn">${c.n}</button>`);
-      b.style.background=paint[C.indexOf(c)].h;
+    shuffle(C).forEach(c=>{const b=el(`<button class="ink-btn">${c.n}</button>`);
       b.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||ok>=N)return;
         if(c===target){ok++;buzz(12);s.querySelector("b").textContent=ok;box.querySelector(".bar i").style.width=(ok/N*100)+"%";
           if(ok>=N){g.innerHTML="";w.textContent="✓";w.style.color="var(--go)";setTimeout(done,300)}else round()}
-        else{locked=true;buzz([80,50,80]);b.classList.add("cm-bad");await lockOut(box,1,"Salah warna!");locked=false;b.classList.remove("cm-bad")}
-      });
-      g.append(b);
-    });
+        else{locked=true;buzz([80,50,80]);await lockOut(box,5,"Itu perkataan, bukan warna!");locked=false}});
+      g.append(b)});
   };
   round();
 }

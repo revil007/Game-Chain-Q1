@@ -430,6 +430,7 @@ function confetti(cv,colors){
   requestAnimationFrame(step);
 }
 /* ===== VERSI SANDARAN: tiada server. Rantai dibawa oleh kod QR dari phone ke phone. ===== */
+// Kunci rahsia untuk kad QR mula. Mesti sama dengan password dalam qr-mula.html semasa menjana kad.
 const START_PASSWORD = "sci221548";
 const SALT = "SCI-FUNRACE-SANDARAN";
 
@@ -481,39 +482,21 @@ function home(msg){
     <h1>8 pekerja, 8 game, satu rantai.</h1>
     <ol class="list">${GAMES.map((g,i)=>`<li><b>${i+1}</b>${g.name}</li>`).join("")}</ol>
     ${msg?`<p class="err">${esc(msg)}</p>`:""}
-    <div><label for="pass">Password permainan</label><div class="passrow"><input id="pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dapatkan daripada fasilitator"><button type="button" class="passeye" id="passEye">Tunjuk</button></div></div>
-    <p class="err" id="err" hidden></p>
-    <button class="btn" id="go">Mula Game 1</button>
-  </section>`);
-  $app.append(c);
-  const tp=teamPicker();c.querySelector("#pass").closest("div").parentElement.before(tp);
-  const pin=c.querySelector("#pass"),eye=c.querySelector("#passEye"),err=c.querySelector("#err");
-  eye.onclick=()=>{const show=pin.type==="password";pin.type=show?"text":"password";eye.textContent=show?"Sorok":"Tunjuk"};
-  c.querySelector("#go").onclick=()=>{
-    const team=tp.value(),pass=pin.value.trim();
-    if(!team){err.textContent="Sila pilih pasukan anda.";err.hidden=false;return}
-    if(pass.toLowerCase()!==START_PASSWORD.toLowerCase()){err.textContent=pass?"Password salah. Dapatkan password daripada fasilitator.":"Sila masukkan password permainan.";err.hidden=false;buzz([60,40,60]);return}
-    const ti=TEAMS.findIndex(t=>t.name===team);
-    if(playedFor(ti)){err.textContent=`Phone ini sudah digunakan untuk ${team} (Game ${playedFor(ti)}).`;err.hidden=false;return}
-    S={team:ti,stage:1,start:nowS(),phase:"intro"};markPlayed(ti,1);save();intro();
-  };
-  const sc=el(`<section class="card">
-    <h2>Giliran anda?</h2>
-    <p>Scan QR pada phone rakan anda untuk sambung rantai.</p>
-    <button class="btn" id="scan">Scan QR rakan</button>
+    <p>Pemain pertama: scan <b style="color:var(--fg)">kad QR mula</b> pasukan anda selepas wisel.<br>Pemain seterusnya: scan QR pada phone rakan anda.</p>
+    <button class="btn" id="scan">Scan QR</button>
     <details class="manual"><summary>Tak dapat scan? Taip kod</summary>
       <div class="row" style="margin-top:10px"><input id="manual" placeholder="cth: 35 1QZK 8M3 7F" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
     </details>
     <p class="err" id="serr" hidden></p>
   </section>`);
-  $app.append(sc);
-  sc.querySelector("#scan").onclick=scanView;
+  $app.append(c);
+  c.querySelector("#scan").onclick=scanView;
+  c.querySelector("#mgo").onclick=()=>{const r=acceptCode(c.querySelector("#manual").value);if(r){const e=c.querySelector("#serr");e.textContent=r;e.hidden=false}};
   const rs=el(`<button class="reset" id="reset">Set semula phone ini</button>`);$app.append(rs);
   let armed=false;rs.onclick=()=>{
     if(!armed){armed=true;rs.textContent="Tekan sekali lagi untuk padam rekod phone ini";setTimeout(()=>{if(rs.isConnected){armed=false;rs.textContent="Set semula phone ini"}},4000);return}
     ["used","played","session"].forEach(k=>store.set(k,null));home("Rekod phone ini telah dipadam.");
   };
-  sc.querySelector("#mgo").onclick=()=>{const r=acceptCode(sc.querySelector("#manual").value);if(r){const e=sc.querySelector("#serr");e.textContent=r;e.hidden=false}};
 }
 
 /* Terima kod rantai. Pulangkan mesej ralat, atau null jika berjaya. */
@@ -546,9 +529,9 @@ function stopScan(){cancelAnimationFrame(scanLoop);scanLoop=null;if(scanStream){
 async function scanView(){
   stopScan();clearInterval(tick);S=null;header();$app.innerHTML="";
   const c=el(`<section class="card">
-    <div class="eyebrow">Scan QR rakan</div>
+    <div class="eyebrow">Scan QR</div>
     <div class="cam"><video id="vid" playsinline muted></video><div class="cam-frame"></div></div>
-    <p id="smsg" style="text-align:center">Halakan kamera ke QR pada phone rakan anda.</p>
+    <p id="smsg" style="text-align:center">Halakan kamera ke kad QR mula atau QR pada phone rakan anda.</p>
     <div class="row"><input id="manual" placeholder="Atau taip kod: 35 1QZK 8M3 7F" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
     <button class="btn ghost" id="back">Kembali</button>
   </section>`);$app.append(c);
@@ -619,7 +602,7 @@ function handoff(){
   const c=el(`<section class="card">
     <div class="done-ring">✓ GAME ${S.stage} SELESAI</div>
     <h2 style="text-align:center">Serahkan kepada pekerja seterusnya</h2>
-    <p style="text-align:center">Rakan anda scan QR ini dengan phone sendiri untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>. Tiada internet? Guna butang <b style="color:var(--fg)">Scan QR rakan</b> dalam halaman ini.</p>
+    <p style="text-align:center">Rakan anda scan QR ini dengan phone sendiri untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>. Tiada internet? Guna butang <b style="color:var(--fg)">Scan QR</b> dalam halaman ini.</p>
     <div class="qr" id="qr"></div>
     <div><label>Kod</label><div class="code">${code.replace(/(.{2})(.{4})(.{3})(.*)/,"$1 $2 $3 $4")}</div></div>
     <div class="timer" style="text-align:center" id="tm"></div>

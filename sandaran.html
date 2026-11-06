@@ -101,6 +101,8 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.quit{align-self:center;background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;padding:8px}
+.quit.armed{color:var(--stop);font-weight:700}
 .passrow{display:flex;gap:8px}
 .passrow input{min-width:0;flex:1}
 .passeye{flex:none;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--muted);font-weight:700;font-size:14px}
@@ -577,6 +579,19 @@ function intro(){
   </section>`);$app.append(c);
   runClock(c.querySelector("#tm"),"Anggaran masa pasukan: ");
   c.querySelector("#play").onclick=play;
+  $app.append(quitButton(()=>{clearInterval(tick);store.set("session",null);home()}));
+}
+
+/* Butang kecil "Keluar & mula semula" di skrin arahan: dua tekan untuk sahkan */
+function quitButton(onQuit){
+  const q=el(`<button class="quit" type="button">Keluar &amp; mula semula</button>`);
+  let armed=false;
+  q.onclick=()=>{
+    if(!armed){armed=true;q.textContent="Tekan sekali lagi untuk keluar";q.classList.add("armed");
+      setTimeout(()=>{if(q.isConnected){armed=false;q.textContent="Keluar & mula semula";q.classList.remove("armed")}},4000);return}
+    onQuit();
+  };
+  return q;
 }
 function play(){
   S.phase="play";save();const g=GAMES[S.stage-1];$app.innerHTML="";

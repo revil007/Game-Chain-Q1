@@ -542,7 +542,7 @@ async function sendDone(){
   try{const j=await api("done",{key:S.key});
     if(j.next){S.next=j.next;S.phase="handoff";save();handoff()}
     else{S.total=j.total;S.players=j.players||[];S.phase="finish";save();finish()}
-  }catch(e){msg.textContent=e.message+" Keputusan anda tidak hilang.";msg.className="err";r.hidden=false}
+  }catch(e){if(clearIfReset(e))return;msg.textContent=e.message+" Keputusan anda tidak hilang.";msg.className="err";r.hidden=false}
 }
 
 function handoff(){
@@ -651,12 +651,36 @@ async function board(){
 }
 
 /* ===== Boot ===== */
+/* Sesi lama: semak dengan server dulu. Kalau rekod sudah direset, mula semula dari muka depan. */
+let bootId=0;
+async function checkThenResume(saved){
+  const my=++bootId;
+  clearInterval(tick);S=null;header();$app.innerHTML="";
+  $app.append(el(`<section class="card" style="text-align:center"><p>Menyemak sesi…</p></section>`));
+  let valid=true;
+  try{valid=!saved.key||(await api("check",{key:saved.key})).valid!==false}catch(e){/* tiada internet: teruskan sesi lama */}
+  if(my!==bootId)return;
+  if(!valid){
+    store.set("session",null);
+    try{history.replaceState(null,"",location.pathname)}catch(e){}
+    return home();
+  }
+  S=saved;resume();
+}
+function clearIfReset(e){
+  if(!/Sesi tidak dijumpai/i.test(e.message))return false;
+  store.set("session",null);
+  try{history.replaceState(null,"",location.pathname)}catch(x){}
+  home("Rekod permainan sudah direset oleh fasilitator. Sila mula semula.");
+  return true;
+}
 function boot(){
+  bootId++;
   clearInterval(boardTimer);
   const h=location.hash.slice(1).toLowerCase();
   if(h==="papan") return board();
   const saved=store.get("session");
-  if(saved&&saved.phase&&(h===""||h===saved.hash)){S=saved;return resume()}
+  if(saved&&saved.phase&&(h===""||h===saved.hash)) return checkThenResume(saved);
   if(/^[0-9a-z]{10}$/.test(h)) return claimView(h);
   home(h?"Kod dalam pautan tidak sah. Minta rakan tunjukkan QR semula.":"");
 }

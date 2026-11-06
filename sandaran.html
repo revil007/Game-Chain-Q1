@@ -444,7 +444,7 @@ const dec=s=>[...s].reduce((n,c)=>n*32+B32.indexOf(c),0);
 function chk(s){let x=2166136261;for(const c of s+SALT){x^=c.charCodeAt(0);x=Math.imul(x,16777619)>>>0}return enc(x%1024,2)}
 function makeCode(team,stage,start){const b=`${team}${stage}${start}`;return b+chk(b)}
 function readCode(raw){
-  const c=String(raw||"").toUpperCase().replace(/O/g,"0").replace(/[IL]/g,"1").replace(/[^0-9A-Z]/g,"");
+  const c=String(raw||"").replace(/^.*#/,"").toUpperCase().replace(/O/g,"0").replace(/[IL]/g,"1").replace(/[^0-9A-Z]/g,"");
   const m=c.match(/^([0-5])([2-9])([0-9A-HJKMNP-TV-Z]{7})([0-9A-HJKMNP-TV-Z]{2})$/);
   if(!m||chk(m[1]+m[2]+m[3])!==m[4])return null;
   return {team:+m[1],stage:+m[2],start:m[3],code:c};
@@ -546,7 +546,10 @@ async function scanView(){
     if(!vid.isConnected){stopScan();return}
     vid.srcObject=scanStream;await vid.play();
   }catch(e){msg.textContent="Kamera tidak dapat dibuka. Benarkan akses kamera, atau taip kod di bawah.";msg.className="err";return}
-  const det=("BarcodeDetector" in window)?new BarcodeDetector({formats:["qr_code"]}):null;
+  let det=null;
+  try{if("BarcodeDetector" in window){const f=await BarcodeDetector.getSupportedFormats();if(f.includes("qr_code"))det=new BarcodeDetector({formats:["qr_code"]})}}catch(e){det=null}
+  if(!det&&!window.jsQR){msg.textContent="Pengimbas QR tidak dapat dimuat pada phone ini. Taip kod di bawah, atau muat semula halaman semasa ada internet.";msg.className="err";return}
+  msg.textContent="Halakan kamera ke QR pada phone rakan anda…";
   const cv=document.createElement("canvas"),cx=cv.getContext("2d",{willReadFrequently:true});
   let last=0,lastBad="";
   const step=async t=>{
@@ -589,12 +592,13 @@ function handoff(){
   const c=el(`<section class="card">
     <div class="done-ring">✓ GAME ${S.stage} SELESAI</div>
     <h2 style="text-align:center">Serahkan kepada pekerja seterusnya</h2>
-    <p style="text-align:center">Rakan anda tekan <b style="color:var(--fg)">Scan QR rakan</b> di halaman ini pada phone sendiri, untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>.</p>
+    <p style="text-align:center">Rakan anda scan QR ini dengan phone sendiri untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>. Tiada internet? Guna butang <b style="color:var(--fg)">Scan QR rakan</b> dalam halaman ini.</p>
     <div class="qr" id="qr"></div>
     <div><label>Kod</label><div class="code">${code.replace(/(.{2})(.{4})(.{3})(.*)/,"$1 $2 $3 $4")}</div></div>
     <div class="timer" style="text-align:center" id="tm"></div>
   </section>`);$app.append(c);
-  try{new QRCode(c.querySelector("#qr"),{text:code,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
+  const link=location.origin+location.pathname+"#"+code;
+  try{new QRCode(c.querySelector("#qr"),{text:/^https?:/.test(link)?link:code,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
   catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR tidak dapat dipaparkan. Rakan anda boleh taip kod di bawah.</p>`))}
   runClock(c.querySelector("#tm"),"Anggaran masa pasukan: ");
 }
@@ -615,6 +619,11 @@ function finish(){
 
 /* Sambung semula jika halaman dimuat semula */
 (function boot(){
+  const h=location.hash.slice(1);
+  if(h){try{history.replaceState(null,"",location.pathname)}catch(e){}
+    const saved0=store.get("session");
+    if(!(saved0&&saved0.phase&&saved0.phase!=="finish")){const r=acceptCode(h);if(!r)return;home(r);return}
+  }
   const saved=store.get("session");
   if(saved&&saved.phase&&saved.phase!=="done"&&TEAMS[saved.team]){S=saved;({intro,play:intro,handoff,finish}[S.phase]||home)();return}
   home();

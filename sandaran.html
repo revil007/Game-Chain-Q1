@@ -102,7 +102,6 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
 .quit{align-self:center;background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;padding:8px}
-.quit.armed{color:var(--stop);font-weight:700}
 .passrow{display:flex;gap:8px}
 .passrow input{min-width:0;flex:1}
 .passeye{flex:none;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--muted);font-weight:700;font-size:14px}
@@ -432,7 +431,7 @@ function confetti(cv,colors){
 /* ===== VERSI SANDARAN: tiada server. Rantai dibawa oleh kod QR dari phone ke phone. ===== */
 // Kunci rahsia untuk kad QR mula. Mesti sama dengan password dalam qr-mula.html semasa menjana kad.
 const START_PASSWORD = "sci221548";
-// Password untuk "Set semula phone ini" (boleh ditukar kepada password lain)
+// Password fasilitator untuk "Set semula phone ini" dan "Keluar & mula semula" (boleh ditukar)
 const RESET_PASSWORD = START_PASSWORD;
 const SALT = "SCI-FUNRACE-SANDARAN";
 
@@ -599,14 +598,28 @@ function intro(){
   $app.append(quitButton(()=>{clearInterval(tick);store.set("session",null);home()}));
 }
 
-/* Butang kecil "Keluar & mula semula" di skrin arahan: dua tekan untuk sahkan */
+/* Butang kecil "Keluar & mula semula": perlu password fasilitator */
 function quitButton(onQuit){
   const q=el(`<button class="quit" type="button">Keluar &amp; mula semula</button>`);
-  let armed=false;
   q.onclick=()=>{
-    if(!armed){armed=true;q.textContent="Tekan sekali lagi untuk keluar";q.classList.add("armed");
-      setTimeout(()=>{if(q.isConnected){armed=false;q.textContent="Keluar & mula semula";q.classList.remove("armed")}},4000);return}
-    onQuit();
+    const f=el(`<section class="card quitbox">
+      <h2>Keluar dari game ini?</h2>
+      <p>${S&&S.phase==="handoff"?"QR untuk rakan anda akan hilang dan rantai pasukan akan terputus. ":""}Masukkan password fasilitator untuk keluar.</p>
+      <div class="passrow"><input type="password" class="qpass" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Password fasilitator"><button type="button" class="passeye">Tunjuk</button></div>
+      <p class="err" hidden></p>
+      <div class="row"><button class="btn qgo">Keluar</button><button class="btn ghost qno">Batal</button></div>
+    </section>`);
+    q.replaceWith(f);
+    const pin=f.querySelector(".qpass"),eye=f.querySelector(".passeye"),err=f.querySelector(".err");
+    eye.onclick=()=>{const show=pin.type==="password";pin.type=show?"text":"password";eye.textContent=show?"Sorok":"Tunjuk"};
+    f.querySelector(".qno").onclick=()=>f.replaceWith(quitButton(onQuit));
+    const go=()=>{
+      if(pin.value.trim().toLowerCase()!==RESET_PASSWORD.toLowerCase()){err.textContent=pin.value.trim()?"Password salah.":"Sila masukkan password.";err.hidden=false;buzz([60,40,60]);return}
+      onQuit();
+    };
+    f.querySelector(".qgo").onclick=go;
+    pin.addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+    pin.focus();f.scrollIntoView({block:"center"});
   };
   return q;
 }

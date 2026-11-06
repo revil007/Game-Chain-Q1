@@ -196,6 +196,8 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 <script>
 /* ===== Konfigurasi ===== */
 const API_URL = "https://script.google.com/macros/s/AKfycbyRE8htk8mPauI3yhOiXBK58VgtsF398IiTkRU50Zl3afz4svDJpZxvvUbyU2yvJwa-nw/exec";
+// Minta no. pekerja? true = ya (hari acara), false = tidak (ujian). Tukar juga REQUIRE_STAFF dalam Code.gs.
+const ASK_STAFF = false;
 const TEAMS = [
   {name:"Obsidian Elite", color:"#e3b21f"},
   {name:"Red Gladiators", color:"#d8362f"},
@@ -458,7 +460,7 @@ function home(msg){
       <p class="rule-note">Melanggar peraturan boleh menyebabkan pasukan dibatalkan. Keputusan fasilitator adalah muktamad.</p>
     </div>
     ${msg?`<p class="err">${esc(msg)}</p>`:""}
-    <div><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
+    <div ${ASK_STAFF?"":"hidden"}><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
     <p class="err" id="err" hidden></p>
     <button class="btn" id="go">Mula Game 1</button>
   </section>`);
@@ -468,7 +470,7 @@ function home(msg){
   b.onclick=async()=>{
     const staff=c.querySelector("#staff").value.trim(),team=tp.value();
     if(!team){err.textContent="Sila pilih pasukan anda.";err.hidden=false;return}
-    if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
+    if(ASK_STAFF&&!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     busy(b,true);err.hidden=true;
     try{const j=await api("start",{team,staff});
       S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff,next:j.next||""};save();
@@ -491,21 +493,21 @@ function claimView(token){
   const c=el(`<section class="card">
     <div class="eyebrow">QR rantai diterima</div>
     <h1>Giliran anda!</h1>
-    <p>Masukkan no. pekerja untuk buka game pasukan anda. QR ini akan terkunci kepada anda sebaik sahaja disahkan.</p>
-    <div><label for="staff">No. pekerja anda</label><input id="staff" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
+    <p>${ASK_STAFF?"Masukkan no. pekerja untuk buka game pasukan anda. ":"Tekan butang di bawah untuk buka game pasukan anda. "}QR ini akan terkunci kepada anda sebaik sahaja disahkan.</p>
+    <div ${ASK_STAFF?"":"hidden"}><label for="staff">No. pekerja anda</label><input id="staff" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
     <p class="err" id="err" hidden></p>
-    <button class="btn" id="go">Sahkan &amp; buka game</button>
+    <button class="btn" id="go">${ASK_STAFF?"Sahkan &amp; buka game":"Buka game"}</button>
     <a class="btn ghost" style="text-align:center;text-decoration:none" href="#">Kembali ke halaman utama</a>
   </section>`);
   $app.append(c);
   const b=c.querySelector("#go"),err=c.querySelector("#err");
   b.onclick=async()=>{
     const staff=c.querySelector("#staff").value.trim();
-    if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
+    if(ASK_STAFF&&!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     busy(b,true);err.hidden=true;
     try{const j=await api("claim",{token,staff});
       S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff,next:j.next||""};save();intro();
-    }catch(e){err.textContent=e.message;err.hidden=false;buzz([60,40,60]);busy(b,false,"Sahkan & buka game")}
+    }catch(e){err.textContent=e.message;err.hidden=false;buzz([60,40,60]);busy(b,false,ASK_STAFF?"Sahkan & buka game":"Buka game")}
   };
 }
 

@@ -100,6 +100,12 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.livelink{flex:none;display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--fg);font-weight:800;font-size:13px;text-decoration:none;white-space:nowrap}
+.livelink i{width:8px;height:8px;border-radius:50%;background:var(--go);box-shadow:0 0 0 3px rgba(61,220,151,.25)}
+.livelink:active{transform:scale(.97)}
+.livelink:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+[hidden]{display:none!important}
+
 .sync{text-align:center;font-size:14px;font-weight:700;color:var(--muted)}
 .sync.ok{color:var(--go)}
 .sync.bad{color:var(--stop)}
@@ -189,6 +195,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
   <header>
     <div class="brand">Rantai Fun Race<small>8 Game · 8 Pekerja · 1 Rantai</small></div>
     <span class="chip" id="teamChip" hidden></span>
+    <a class="livelink" id="liveLink" href="papan.html"><i></i>Papan Live</a>
   </header>
   <div class="track" id="track" hidden></div>
   <main id="app"></main>
@@ -428,6 +435,7 @@ const save=()=>store.set("session",S);
 
 function header(){
   const chip=document.getElementById("teamChip"),tr=document.getElementById("track");
+  document.getElementById("liveLink").hidden=!!S;   // hanya di muka depan
   if(!S){chip.hidden=true;tr.hidden=true;return}
   chip.hidden=false;chip.innerHTML=`${dot(S.team)}${esc(S.team)}`;
   tr.hidden=false;tr.innerHTML="";
@@ -444,21 +452,6 @@ function home(msg){
     <h1>8 pekerja, 8 game, satu rantai.</h1>
     <p>Pekerja pertama main Game 1. Bila siap, QR keluar. Pekerja seterusnya scan dengan phone sendiri. Setiap QR sekali guna, dan setiap pekerja hanya boleh main satu game.</p>
     <ol class="list">${GAMES.map((g,i)=>`<li><b>${i+1}</b>${g.name}</li>`).join("")}</ol>
-    <div class="rules">
-      <h2>Peraturan Permainan</h2>
-      <ol>
-        <li><b>8 pekerja, 8 game.</b> Setiap pekerja main <b>satu game sahaja</b>, mengikut giliran Game 1 hingga Game 8.</li>
-        <li><b>Guna phone sendiri.</b> Satu phone hanya boleh digunakan untuk satu game bagi setiap pasukan.</li>
-        <li><b>Mula:</b> Pekerja pertama pilih pasukan, masukkan no. pekerja, dan tekan <i>Mula Game 1</i>.</li>
-        <li><b>Serah rantai:</b> Bila game siap, QR akan keluar. Pekerja seterusnya scan QR itu dengan kamera phone sendiri dan masukkan no. pekerja.</li>
-        <li><b>QR sekali guna.</b> Setiap QR hanya boleh discan oleh seorang pekerja. Kalau tak dapat scan, taip kod manual di bawah QR.</li>
-        <li><b>Masa:</b> Jam bermula bila Game 1 dimulakan dan berhenti bila Game 8 siap. Pasukan dengan masa <b>paling singkat</b> menang.</li>
-        <li><b>Hanya pemain menyentuh phone.</b> Rakan sepasukan boleh bersorak dan beri tunjuk ajar secara lisan sahaja.</li>
-        <li><b>Dilarang:</b> main bagi pihak orang lain, guna no. pekerja orang lain, atau tukar browser/mod incognito untuk elak sekatan.</li>
-        <li><b>Tamat:</b> Tunjukkan skrin <i>TAMAT</i> kepada fasilitator untuk semakan nama pemain.</li>
-      </ol>
-      <p class="rule-note">Melanggar peraturan boleh menyebabkan pasukan dibatalkan. Keputusan fasilitator adalah muktamad.</p>
-    </div>
     ${msg?`<p class="err">${esc(msg)}</p>`:""}
     <div ${ASK_STAFF?"":"hidden"}><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
     <p class="err" id="err" hidden></p>
@@ -471,62 +464,77 @@ function home(msg){
     const staff=c.querySelector("#staff").value.trim(),team=tp.value();
     if(!team){err.textContent="Sila pilih pasukan anda.";err.hidden=false;return}
     if(ASK_STAFF&&!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
-    busy(b,true);err.hidden=true;
+    err.hidden=true;
+    const my=++bootId;
+    S={team,stage:1,start:0,phase:"verify",staff};intro(true);   // papar arahan serta-merta, server semak di belakang
     try{const j=await api("start",{team,staff});
-      S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff,next:j.next||""};save();
+      if(my!==bootId)return;
+      S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff,next:j.next||""};
       try{history.replaceState(null,"",location.pathname)}catch(e){}
-      intro();
-    }catch(e){err.textContent=e.message;err.hidden=false;busy(b,false,"Mula Game 1")}
+      confirmIntro();
+    }catch(e){if(my!==bootId)return;buzz([60,40,60]);home(e.message)}
   };
-  const m=el(`<section class="card">
-    <h2>Ada kod?</h2>
-    <p>Kalau QR tak dapat discan, taip kod di bawah QR rakan anda.</p>
-    <div class="row"><input id="manual" placeholder="cth: 4f9a2c7e1b" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
-  </section>`);
-  $app.append(m);
-  m.querySelector("#mgo").onclick=()=>{const v=m.querySelector("#manual").value.trim().toLowerCase().replace(/^.*#/,"");if(v)location.hash=v};
-  $app.append(el(`<a class="btn ghost" style="text-align:center;text-decoration:none" href="papan.html">Lihat papan kedudukan live</a>`));
 }
 
-function claimView(token){
+function claimView(token,hint,msg,prevStaff){
+  hint=hint||{};
+  if(!ASK_STAFF&&!msg) return doClaim(token,"",hint);   // tanpa no. pekerja: scan = terus tuntut
   clearInterval(tick);S=null;header();$app.innerHTML="";
   const c=el(`<section class="card">
     <div class="eyebrow">QR rantai diterima</div>
-    <h1>Giliran anda!</h1>
-    <p>${ASK_STAFF?"Masukkan no. pekerja untuk buka game pasukan anda. ":"Tekan butang di bawah untuk buka game pasukan anda. "}QR ini akan terkunci kepada anda sebaik sahaja disahkan.</p>
+    <h1>${msg?"Tidak dapat buka game":"Giliran anda!"}</h1>
+    <p>${ASK_STAFF?"Masukkan no. pekerja untuk buka game pasukan anda. ":"Tekan butang di bawah untuk cuba sekali lagi. "}QR ini akan terkunci kepada anda sebaik sahaja disahkan.</p>
     <div ${ASK_STAFF?"":"hidden"}><label for="staff">No. pekerja anda</label><input id="staff" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
-    <p class="err" id="err" hidden></p>
-    <button class="btn" id="go">${ASK_STAFF?"Sahkan &amp; buka game":"Buka game"}</button>
+    <p class="err" id="err" ${msg?"":"hidden"}>${msg?esc(msg):""}</p>
+    <button class="btn" id="go">${ASK_STAFF?"Sahkan &amp; buka game":"Cuba lagi"}</button>
     <a class="btn ghost" style="text-align:center;text-decoration:none" href="#">Kembali ke halaman utama</a>
   </section>`);
   $app.append(c);
-  const b=c.querySelector("#go"),err=c.querySelector("#err");
-  b.onclick=async()=>{
-    const staff=c.querySelector("#staff").value.trim();
+  const inp=c.querySelector("#staff"),err=c.querySelector("#err");
+  if(prevStaff)inp.value=prevStaff;
+  c.querySelector("#go").onclick=()=>{
+    const staff=inp.value.trim();
     if(ASK_STAFF&&!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
-    busy(b,true);err.hidden=true;
-    try{const j=await api("claim",{token,staff});
-      S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff,next:j.next||""};save();intro();
-    }catch(e){err.textContent=e.message;err.hidden=false;buzz([60,40,60]);busy(b,false,ASK_STAFF?"Sahkan & buka game":"Buka game")}
+    doClaim(token,staff,hint);
   };
 }
-
+/* Tuntut QR: arahan game dipapar serta-merta, butang MULA aktif selepas server sahkan */
+async function doClaim(token,staff,hint){
+  const my=++bootId;
+  if(hint&&hint.stage){S={team:hint.team||"",stage:hint.stage,start:0,phase:"verify",staff};intro(true)}
+  else{clearInterval(tick);S=null;header();$app.innerHTML="";
+    $app.append(el(`<section class="card" style="text-align:center"><div class="eyebrow">QR rantai diterima</div><p>Membuka game pasukan anda…</p></section>`))}
+  try{const j=await api("claim",{token,staff});
+    if(my!==bootId)return;
+    S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff,next:j.next||""};
+    confirmIntro();
+  }catch(e){if(my!==bootId)return;buzz([60,40,60]);S=null;claimView(token,hint,e.message,staff)}
+}
 function runClock(node,prefix=""){const u=()=>{if(node.isConnected)node.textContent=prefix+fmt(since(S.start))};u();clearInterval(tick);tick=setInterval(u,1000)}
 
-function intro(){
-  S.phase="intro";save();header();const g=GAMES[S.stage-1];$app.innerHTML="";
-  const who=S.name?`${esc(S.name)} (${esc(S.staff)})`:esc(S.staff||"");
+function intro(verifying){
+  if(!verifying){S.phase="intro";save()}
+  clearInterval(tick);header();const g=GAMES[S.stage-1];$app.innerHTML="";
+  const who=S.name?`${esc(S.name)} (${esc(S.staff)})`:(ASK_STAFF?esc(S.staff||""):"");
   const c=el(`<section class="card">
-    <div class="eyebrow">Game ${S.stage} / 8 · ${esc(S.team)}</div>
+    <div class="eyebrow" id="introHead" data-stage="${S.stage}" data-team="${esc(S.team)}">Game ${S.stage} / 8${S.team?` · ${esc(S.team)}`:""}</div>
     <h1>${g.name}</h1><p>${g.desc}</p>
     ${who?`<p>Pemain: <b style="color:var(--fg)">${who}</b></p>`:""}
     <div class="timer" id="tm"></div>
-    <button class="btn" id="play">Saya sedia — MULA</button>
+    <button class="btn" id="play" ${verifying?"disabled":""}>${verifying?"Sedang sahkan…":"Saya sedia — MULA"}</button>
   </section>`);$app.append(c);
-  runClock(c.querySelector("#tm"),"Masa pasukan: ");
+  if(verifying)c.querySelector("#tm").textContent="Masa pasukan: sedang disahkan…";
+  else runClock(c.querySelector("#tm"),"Masa pasukan: ");
   c.querySelector("#play").onclick=play;
 }
-
+/* Server dah sahkan: aktifkan butang tanpa lukis semula skrin (kalau game & pasukan sama) */
+function confirmIntro(){
+  S.phase="intro";save();
+  const h=document.getElementById("introHead"),b=document.getElementById("play"),tm=document.getElementById("tm");
+  if(h&&b&&tm&&+h.dataset.stage===S.stage&&h.dataset.team===S.team&&!S.name){
+    header();b.disabled=false;b.textContent="Saya sedia — MULA";runClock(tm,"Masa pasukan: ");buzz(20);
+  } else intro();
+}
 function play(){
   S.phase="play";save();const g=GAMES[S.stage-1];$app.innerHTML="";
   const c=el(`<section class="card"><div class="row" style="justify-content:space-between;align-items:center"><div class="eyebrow">Game ${S.stage} · ${g.name}</div><div class="timer" id="tm"></div></div><div id="box" style="display:flex;flex-direction:column;gap:14px"></div></section>`);
@@ -554,19 +562,19 @@ async function sendDone(){
 
 function handoff(){
   clearInterval(tick);header();$app.innerHTML="";
-  const next=S.stage+1,url=BASE+"#"+S.next;
+  const next=S.stage+1,ti=TEAMS.findIndex(t=>t.name===S.team);
+  const url=BASE+"#"+S.next+"-"+next+(ti>=0?"-"+ti:"");   // nombor game & pasukan hanya untuk paparan awal; server tetap yang sahkan
   const c=el(`<section class="card">
     <div class="done-ring">✓ GAME ${S.stage} SELESAI</div>
     <h2 style="text-align:center">Serahkan kepada pekerja seterusnya</h2>
     <p style="text-align:center">Pekerja lain scan QR ini guna <b style="color:var(--fg)">phone sendiri</b> untuk buka <b style="color:var(--fg)">Game ${next}: ${GAMES[next-1].name}</b>. QR ini hanya boleh digunakan sekali.</p>
     <div class="qr" id="qr"></div>
-    <div><label>Kod manual</label><div class="code">${esc(S.next.toUpperCase())}</div></div>
     <div class="timer" style="text-align:center" id="tm"></div>
     <p class="sync" id="sync" hidden></p>
     <button class="btn" id="resend" hidden>Cuba hantar semula</button>
   </section>`);$app.append(c);
   try{new QRCode(c.querySelector("#qr"),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
-  catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR gagal dimuat. Guna kod manual di bawah.</p>`))}
+  catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR gagal dimuat. Muat semula halaman ini.</p>`))}
   runClock(c.querySelector("#tm"),"Masa pasukan: ");
   c.querySelector("#resend").onclick=()=>pushDone(c);
   if(S.pending)pushDone(c);
@@ -704,8 +712,9 @@ function boot(){
   const h=location.hash.slice(1).toLowerCase();
   if(h==="papan") return board();
   const saved=store.get("session");
-  if(saved&&saved.phase&&(h===""||h===saved.hash)) return checkThenResume(saved);
-  if(/^[0-9a-z]{10}$/.test(h)) return claimView(h);
+  const m=h.match(/^([0-9a-z]{10})(?:-([1-8]))?(?:-(\d))?$/);
+  if(saved&&saved.phase&&(h===""||(m&&m[1]===saved.hash))) return checkThenResume(saved);
+  if(m) return claimView(m[1],{stage:+m[2]||0,team:(TEAMS[+m[3]]||{}).name||""});
   home(h?"Kod dalam pautan tidak sah. Minta rakan tunjukkan QR semula.":"");
 }
 window.addEventListener("hashchange",boot);

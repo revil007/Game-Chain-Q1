@@ -200,6 +200,9 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 .cam-frame{position:absolute;inset:18%;border:3px solid var(--hazard);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
 .manual summary{cursor:pointer;color:var(--muted);font-size:14px;font-weight:600}
 .manual[open] summary{color:var(--fg)}
+.logstat{margin:8px 20px 0;text-align:center;font-size:13px;font-weight:700}
+.logstat.ok{color:#2e9e6a}
+.logstat.wait{color:var(--muted)}
 .reset{align-self:center;background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;padding:8px}
 </style>
 </head>
@@ -433,6 +436,8 @@ function confetti(cv,colors){
 const START_PASSWORD = "sci221548";
 // Password fasilitator untuk "Set semula phone ini" dan "Keluar & mula semula" (boleh ditukar)
 const RESET_PASSWORD = START_PASSWORD;
+// Rekod MULA & TAMAT ke Google Sheet (Code-sandaran.gs). Kosong = tidak merekod.
+const LOG_URL = "https://script.google.com/macros/s/AKfycbxyNwa35hCuE7hLpxFvhm3iREGJFzEdId_ae3-WkkDhTUysV38U3qRz9Shhe15xLKF8Ig/exec";
 const SALT = "SCI-FUNRACE-SANDARAN";
 
 const store={
@@ -531,7 +536,7 @@ function acceptCode(raw){
     const pf=playedFor(ti);
     if(pf)return `Phone ini sudah digunakan untuk ${teamName(ti)} (Game ${pf}).`;
     stopScan();markPlayed(ti,1);
-    S={team:ti,stage:1,start:nowS(),phase:"intro"};save();buzz(30);intro();
+    S={team:ti,stage:1,start:nowS(),phase:"intro"};save();logEvent("MULA");buzz(30);intro();
     return null;
   }
   const r=readCode(raw);
@@ -629,7 +634,7 @@ function play(){
   $app.append(c);runClock(c.querySelector("#tm"));
   let fired=false;
   g.play(c.querySelector("#box"),()=>{if(fired)return;fired=true;buzz([30,40,30]);
-    if(S.stage>=8){S.phase="finish";S.end=Date.now();save();finish()}else{S.phase="handoff";save();handoff()}});
+    if(S.stage>=8){S.phase="finish";S.end=Date.now();save();logEvent("TAMAT",{total_sec:Math.max(0,Math.round((S.end-startMs(S.start))/1000))});finish()}else{S.phase="handoff";save();handoff()}});
 }
 function handoff(){
   clearInterval(tick);header();$app.innerHTML="";
@@ -657,11 +662,47 @@ function finish(){
     <div class="fin-time"><div class="fin-label">Anggaran masa (jam phone)</div><div class="fin-clock">${fmt(secs)}</div>
       <div class="fin-sub">Masa rasmi ikut jam randik fasilitator</div></div>
     <p class="fin-note">Tunjukkan skrin ini kepada fasilitator.</p>
+    ${LOG_URL?`<p class="logstat" id="logStat"></p>`:""}
     <button class="btn" id="finAct">Selesai — kembali ke halaman utama</button>
   </section>`);$app.append(c);
   c.querySelector("#finAct").onclick=()=>{store.set("session",null);home()};
   confetti(c.querySelector(".confetti"),[teamColor(tn),"#ffc93c","#3ddc97","#eef5f1"]);
+  updateLogStatus();
 }
+
+/* ===== Rekod ringkas ke Google Sheet (hanya MULA & TAMAT) =====
+   Rekod disimpan dahulu dalam phone, kemudian dihantar. Tiada internet? Ia dihantar sendiri bila line pulih. */
+function deviceId(){let d=store.get("device");if(!d){d=Math.random().toString(36).slice(2,10);store.set("device",d)}return d}
+function logEvent(type,extra){
+  if(!LOG_URL||!S)return;
+  const q=store.get("outbox")||[];
+  q.push(Object.assign({id:Math.random().toString(36).slice(2,10)+Date.now().toString(36),type,team:teamName(S.team),
+    start_ms:startMs(S.start),event_ms:Date.now(),device:deviceId()},extra||{}));
+  store.set("outbox",q);flushLog();
+}
+let flushing=false;
+async function flushLog(){
+  if(!LOG_URL||flushing)return;
+  let q=store.get("outbox")||[];if(!q.length)return updateLogStatus();
+  flushing=true;
+  try{
+    while(q.length){
+      const ev=q[0];
+      const r=await fetch(LOG_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(ev),keepalive:true});
+      const j=await r.json();
+      if(!j.ok&&!/tidak sah/.test(j.error||""))throw new Error(j.error);   // rekod rosak dibuang, ralat lain cuba lagi
+      q=(store.get("outbox")||[]).filter(e=>e.id!==ev.id);store.set("outbox",q);
+    }
+  }catch(e){/* tiada internet: cuba lagi kemudian */}
+  finally{flushing=false;updateLogStatus()}
+}
+function updateLogStatus(){
+  const el=document.getElementById("logStat");if(!el)return;
+  const n=(store.get("outbox")||[]).length;
+  el.className="logstat "+(n?"wait":"ok");
+  el.textContent=n?"Menunggu internet untuk merekod keputusan…":"✓ Keputusan direkod";
+}
+if(LOG_URL){window.addEventListener("online",flushLog);setInterval(flushLog,20000);setTimeout(flushLog,1500)}
 
 /* Sambung semula jika halaman dimuat semula */
 (function boot(){

@@ -616,6 +616,7 @@ function handoff(){
   try{new QRCode(c.querySelector("#qr"),{text:/^https?:/.test(link)?link:code,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
   catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR tidak dapat dipaparkan. Rakan anda boleh taip kod di bawah.</p>`))}
   runClock(c.querySelector("#tm"),"Anggaran masa pasukan: ");
+  $app.append(quitButton(()=>{clearInterval(tick);store.set("session",null);home()}));
 }
 function finish(){
   clearInterval(tick);header();$app.innerHTML="";
@@ -634,6 +635,12 @@ function finish(){
 
 /* Sambung semula jika halaman dimuat semula */
 (function boot(){
+  // Buka link dengan ?reset untuk padam semua rekod phone ini dan mula dari awal
+  if(/(^|[?&])reset\b/i.test(location.search)){
+    ["used","played","session"].forEach(k=>store.set(k,null));
+    try{history.replaceState(null,"",location.pathname)}catch(e){}
+    home("Rekod phone ini telah dipadam. Anda boleh mula dari awal.");return;
+  }
   const h=location.hash.slice(1);
   if(h){try{history.replaceState(null,"",location.pathname)}catch(e){}
     const saved0=store.get("session");

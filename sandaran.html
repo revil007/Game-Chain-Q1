@@ -164,6 +164,7 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .valve span::after{transform:rotate(90deg)}
 .valve:active .valve-face{transform:translateY(3px);box-shadow:0 1px 0 #9e2f2f}
 .valve-pop.miss{color:var(--stop)}
+<<<<<<< HEAD
 .mole-board{width:100%;max-width:340px;align-self:center;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .hole{aspect-ratio:1;max-width:100%;border-radius:50%;position:relative;overflow:hidden;padding:0;cursor:pointer;
   background:radial-gradient(circle at 50% 40%,#2a1f14,#0c0805 70%);border:3px solid #3a2b1c;box-shadow:inset 0 10px 18px rgba(0,0,0,.6);touch-action:manipulation}
@@ -184,6 +185,8 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .valve.safe .valve-face{background:radial-gradient(circle at 35% 30%,#8af5c4,var(--go));box-shadow:0 4px 0 #1f8a5a}
 .valve.safe:active .valve-face{box-shadow:0 1px 0 #1f8a5a}
 .valve{transition:transform .15s}
+=======
+>>>>>>> c24c5a9ce8867b6b6207740cbe98182502807bd4
 .valve-pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--display);font-size:28px;color:var(--go);pointer-events:none;animation:pop .35s ease-out forwards}
 @keyframes pop{to{opacity:0;transform:translate(-50%,-90%) scale(1.3)}}
 
@@ -267,15 +270,22 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 const GAMES=[
  {name:"Color Match Rush",desc:"Perkataan warna keluar dalam warna yang berbeza. Tekan butang yang TULISANNYA sama dengan perkataan itu. Abaikan warna! Perlu 12 betul. Salah tekan = terkunci 1 saat.",play:gColor},
  {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
+<<<<<<< HEAD
  {name:"Whack-a-Mole",desc:"Tekan tikus 🐹 yang muncul dari lubang secepat mungkin. Perlu 22 kena. Tikus makin laju. Tekan lubang kosong = terkunci 5 saat.",play:gMole},
  {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
  {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 1 saat.",play:gValve},
+=======
+ {name:"Padam Api",desc:"Padam 20 api yang muncul secara rawak. Mula perlahan, makin lama makin laju! Salah tekan pekerja 👷 = terkunci 3 saat, tekan petak kosong = terkunci 1 saat.",play:gFire},
+ {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
+ {name:"Tutup Injap",desc:"Injap merah muncul di tempat rawak. Tekan secepat mungkin untuk tutup 20 injap. Tekan tersasar = terkunci 1 saat.",play:gValve},
+>>>>>>> c24c5a9ce8867b6b6207740cbe98182502807bd4
  {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
  {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 3 perkataan: 5 huruf, 8 huruf dan 10 huruf. Huruf salah = mula semula perkataan itu.",play:gWord},
  {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
 ];
 
 function gValve(box,done){
+<<<<<<< HEAD
   const N=20;let n=0,locked=false,over=false,jumpT=null,target=null;
   const C=[{n:"MERAH",h:"#ff5c5c",d:"#9e2f2f",y:"▲"},{n:"BIRU",h:"#4aa8ff",d:"#1f5f9e",y:"●"},
            {n:"KUNING",h:"#ffc93c",d:"#a07a12",y:"■"},{n:"HIJAU",h:"#3ddc97",d:"#1f8a5a",y:"◆"}];
@@ -321,6 +331,24 @@ function gValve(box,done){
     if(n>=N){over=true;clearTimeout(jumpT);valves.forEach(x=>x.hidden=true);setTimeout(done,300);return}
     setTarget();place()}));
   setTarget();place();
+=======
+  const N=20;let n=0,locked=false;
+  const s=el(`<p>Injap ditutup: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const area=el(`<div class="valve-area"></div>`);box.append(area);
+  const v=el(`<button class="valve" aria-label="Tutup injap"><i class="valve-face"><span></span></i></button>`);area.append(v);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan tersasar = terkunci 1 saat</p>`));
+  area.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||n>=N)return;locked=true;buzz([60,40,60]);
+    const p=el(`<span class="valve-pop miss" style="left:${(e.offsetX/area.clientWidth*100)||50}%;top:${(e.offsetY/area.clientHeight*100)||50}%">✕</span>`);area.append(p);setTimeout(()=>p.remove(),350);
+    await lockOut(box,1,"Tersasar!");locked=false});
+  let lx=50,ly=50;
+  const move=()=>{let x,y;do{x=8+Math.random()*84;y=10+Math.random()*80}while(Math.hypot(x-lx,y-ly)<25);lx=x;ly=y;v.style.left=x+"%";v.style.top=y+"%"};
+  move();
+  v.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(locked||n>=N)return;n++;buzz(12);
+    s.querySelector("b").textContent=n;box.querySelector(".bar i").style.width=(n/N*100)+"%";
+    const p=el(`<span class="valve-pop" style="left:${lx}%;top:${ly}%">✓</span>`);area.append(p);setTimeout(()=>p.remove(),350);
+    if(n>=N){v.hidden=true;setTimeout(done,300)}else move()});
+>>>>>>> c24c5a9ce8867b6b6207740cbe98182502807bd4
 }
 function lockOut(box,secs,why){
   return new Promise(res=>{
@@ -330,6 +358,7 @@ function lockOut(box,secs,why){
     const t=setInterval(()=>{left--;if(left<=0||!box.isConnected){clearInterval(t);o.remove();res()}else o.querySelector(".lock-n").textContent=left},1000);
   });
 }
+<<<<<<< HEAD
 function gMole(box,done){
   // Ikut game5.html: 22 kena, 9 lubang, tikus naik 700ms → 300ms, jeda 180ms. Tekan lubang kosong = terkunci 5 saat.
   const PEN=5,GRACE=250;   // GRACE: tekan lewat sejurus selepas tikus turun/dikena tidak dikira salah
@@ -364,6 +393,35 @@ function gMole(box,done){
     spawnT=setTimeout(spawn,GAP);
   }));
   spawnT=setTimeout(spawn,600);
+=======
+function gFire(box,done){
+  const N=20;let hits=0,over=false,locked=false,spawn;
+  const s=el(`<p>Api dipadam: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+  box.append(el(`<div class="bar"><i></i></div>`));
+  const g=el(`<div class="grid g3"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan pekerja 👷 = kunci 3 saat · Tekan petak kosong = kunci 1 saat</p>`));
+  const cells=[...Array(9)].map(()=>{const b=el(`<button class="tile fire-cell" aria-label="Petak"></button>`);g.append(b);return b});
+  const upd=()=>{s.querySelector("b").textContent=hits;box.querySelector(".bar i").style.width=(hits/N*100)+"%"};
+  const clear=b=>{clearTimeout(b._t);b.dataset.k="";b.textContent="";b.classList.remove("hot","person")};
+  const lock=async(secs,why)=>{locked=true;buzz([80,50,80]);await lockOut(box,secs,why);locked=false};
+  cells.forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();if(over||locked)return;
+    if(b.dataset.k==="fire"){hits++;buzz(15);clear(b);b.textContent="💨";setTimeout(()=>{if(!b.dataset.k)b.textContent=""},250);upd();
+      if(hits>=N){over=true;clearTimeout(spawn);cells.forEach(clear);setTimeout(done,300)}}
+    else if(b.dataset.k==="person"){clear(b);b.textContent="✋";b.classList.add("ouch");setTimeout(()=>{b.classList.remove("ouch");if(!b.dataset.k)b.textContent=""},400);lock(3,"Anda tersembur pekerja!")}
+    else{b.classList.add("ouch");setTimeout(()=>b.classList.remove("ouch"),300);lock(1,"Tiada api di situ")}
+  }));
+  const next=()=>{
+    if(over||!box.isConnected)return;
+    const free=cells.filter(b=>!b.dataset.k);
+    if(free.length){
+      const b=free[Math.random()*free.length|0];const fire=Math.random()<0.75;
+      b.dataset.k=fire?"fire":"person";b.textContent=fire?"🔥":"👷";b.classList.add(fire?"hot":"person");
+      b._t=setTimeout(()=>clear(b),fire?Math.max(650,1600-hits*48):1400);
+    }
+    spawn=setTimeout(next,Math.max(340,1000-hits*33));   // mula perlahan, makin laju ikut api dipadam
+  };
+  spawn=setTimeout(next,600);
+>>>>>>> c24c5a9ce8867b6b6207740cbe98182502807bd4
 }
 function gGauge(box,done){
   const widths=[28,25,22,19,17,15,13,11],N=widths.length;let ok=0,pos=0,dir=1,speed=0.9,zone=0,last=0,live=true,locked=false;

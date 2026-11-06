@@ -100,6 +100,9 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.sync{text-align:center;font-size:14px;font-weight:700;color:var(--muted)}
+.sync.ok{color:var(--go)}
+.sync.bad{color:var(--stop)}
 .cm-prompt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 8px;border-radius:14px;background:var(--ink);border:1px solid var(--line)}
 .cm-k{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .cm-w{font-family:var(--display);font-size:clamp(40px,13vw,58px);line-height:1.05}
@@ -468,7 +471,7 @@ function home(msg){
     if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     busy(b,true);err.hidden=true;
     try{const j=await api("start",{team,staff});
-      S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff};save();
+      S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff,next:j.next||""};save();
       try{history.replaceState(null,"",location.pathname)}catch(e){}
       intro();
     }catch(e){err.textContent=e.message;err.hidden=false;busy(b,false,"Mula Game 1")}
@@ -501,7 +504,7 @@ function claimView(token){
     if(!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     busy(b,true);err.hidden=true;
     try{const j=await api("claim",{token,staff});
-      S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff};save();intro();
+      S={team:j.team,stage:j.stage,key:j.key,start:j.start,hash:token,phase:"intro",name:j.name,staff,next:j.next||""};save();intro();
     }catch(e){err.textContent=e.message;err.hidden=false;buzz([60,40,60]);busy(b,false,"Sahkan & buka game")}
   };
 }
@@ -527,7 +530,9 @@ function play(){
   const c=el(`<section class="card"><div class="row" style="justify-content:space-between;align-items:center"><div class="eyebrow">Game ${S.stage} · ${g.name}</div><div class="timer" id="tm"></div></div><div id="box" style="display:flex;flex-direction:column;gap:14px"></div></section>`);
   $app.append(c);runClock(c.querySelector("#tm"));
   let fired=false;
-  g.play(c.querySelector("#box"),()=>{if(fired)return;fired=true;buzz([30,40,30]);S.phase="sending";save();sendDone()});
+  g.play(c.querySelector("#box"),()=>{if(fired)return;fired=true;buzz([30,40,30]);
+    if(S.stage<8&&S.next){S.phase="handoff";S.pending=true;save();handoff()}   // QR sudah disediakan: papar serta-merta
+    else{S.phase="sending";save();sendDone()}});
 }
 
 async function sendDone(){
@@ -555,10 +560,27 @@ function handoff(){
     <div class="qr" id="qr"></div>
     <div><label>Kod manual</label><div class="code">${esc(S.next.toUpperCase())}</div></div>
     <div class="timer" style="text-align:center" id="tm"></div>
+    <p class="sync" id="sync" hidden></p>
+    <button class="btn" id="resend" hidden>Cuba hantar semula</button>
   </section>`);$app.append(c);
   try{new QRCode(c.querySelector("#qr"),{text:url,width:440,height:440,correctLevel:QRCode.CorrectLevel.M})}
   catch(e){c.querySelector("#qr").replaceWith(el(`<p class="err">QR gagal dimuat. Guna kod manual di bawah.</p>`))}
   runClock(c.querySelector("#tm"),"Masa pasukan: ");
+  c.querySelector("#resend").onclick=()=>pushDone(c);
+  if(S.pending)pushDone(c);
+}
+/* Hantar keputusan di belakang tabir sementara QR sudah dipaparkan */
+async function pushDone(c){
+  const sync=c.querySelector("#sync"),btn=c.querySelector("#resend");
+  sync.hidden=false;sync.className="sync";sync.textContent="Menghantar keputusan…";btn.hidden=true;
+  try{await api("done",{key:S.key});
+    S.pending=false;save();
+    if(sync.isConnected){sync.className="sync ok";sync.textContent="✓ Keputusan diterima. Rakan anda boleh scan sekarang."}
+  }catch(e){
+    if(clearIfReset(e))return;
+    if(!sync.isConnected)return;
+    sync.className="sync bad";sync.textContent=e.message+" Rakan anda belum boleh scan sehingga keputusan dihantar.";btn.hidden=false;
+  }
 }
 
 function finish(){

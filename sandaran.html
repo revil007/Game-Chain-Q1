@@ -200,6 +200,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 .cam-frame{position:absolute;inset:18%;border:3px solid var(--hazard);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
 .manual summary{cursor:pointer;color:var(--muted);font-size:14px;font-weight:600}
 .manual[open] summary{color:var(--fg)}
+.fin-ms{font-size:.42em;color:var(--fg);opacity:.85}
 .logstat{margin:8px 20px 0;text-align:center;font-size:13px;font-weight:700}
 .logstat.ok{color:#2e9e6a}
 .logstat.wait{color:var(--muted)}
@@ -454,12 +455,13 @@ function chk(s){let x=2166136261;for(const c of s+SALT){x^=c.charCodeAt(0);x=Mat
 function makeCode(team,stage,start){const b=`${team}${stage}${start}`;return b+chk(b)}
 function readCode(raw){
   const c=String(raw||"").replace(/^.*#/,"").toUpperCase().replace(/O/g,"0").replace(/[IL]/g,"1").replace(/[^0-9A-Z]/g,"");
-  const m=c.match(/^([0-5])([2-9])([0-9A-HJKMNP-TV-Z]{7})([0-9A-HJKMNP-TV-Z]{2})$/);
+  const m=c.match(/^([0-5])([2-9])([0-9A-HJKMNP-TV-Z]{9})([0-9A-HJKMNP-TV-Z]{2})$/);
   if(!m||chk(m[1]+m[2]+m[3])!==m[4])return null;
   return {team:+m[1],stage:+m[2],start:m[3],code:c};
 }
-const nowS=()=>enc(Math.floor(Date.now()/1000),7);
-const startMs=s=>dec(s)*1000;
+// Waktu mula disimpan dalam milisaat (9 aksara). Sesi lama 7 aksara = saat.
+const nowS=()=>enc(Date.now(),9);
+const startMs=s=>s.length===7?dec(s)*1000:dec(s);
 
 /* Sekatan ringan di phone ini: kod sekali guna & satu game bagi setiap pasukan */
 function usedHere(code){return (store.get("used")||[]).includes(code)}
@@ -491,7 +493,7 @@ function home(msg){
     <p>Pemain pertama: scan <b style="color:var(--fg)">kad QR mula</b> pasukan anda selepas wisel.<br>Pemain seterusnya: scan QR pada phone rakan anda.</p>
     <button class="btn" id="scan">Scan QR</button>
     <details class="manual"><summary>Tak dapat scan? Taip kod</summary>
-      <div class="row" style="margin-top:10px"><input id="manual" placeholder="cth: 35 1QZK 8M3 7F" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
+      <div class="row" style="margin-top:10px"><input id="manual" placeholder="cth: 35 1QZK 8M3 7FKA" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
     </details>
     <p class="err" id="serr" hidden></p>
   </section>`);
@@ -558,7 +560,7 @@ async function scanView(){
     <div class="eyebrow">Scan QR</div>
     <div class="cam"><video id="vid" playsinline muted></video><div class="cam-frame"></div></div>
     <p id="smsg" style="text-align:center">Halakan kamera ke kad QR mula atau QR pada phone rakan anda.</p>
-    <div class="row"><input id="manual" placeholder="Atau taip kod: 35 1QZK 8M3 7F" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
+    <div class="row"><input id="manual" placeholder="Atau taip kod: 35 1QZK 8M3 7FKA" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn" style="width:auto;padding:12px 18px" id="mgo">Buka</button></div>
     <button class="btn ghost" id="back">Kembali</button>
   </section>`);$app.append(c);
   const msg=c.querySelector("#smsg"),vid=c.querySelector("#vid");
@@ -634,7 +636,7 @@ function play(){
   $app.append(c);runClock(c.querySelector("#tm"));
   let fired=false;
   g.play(c.querySelector("#box"),()=>{if(fired)return;fired=true;buzz([30,40,30]);
-    if(S.stage>=8){S.phase="finish";S.end=Date.now();save();logEvent("TAMAT",{total_sec:Math.max(0,Math.round((S.end-startMs(S.start))/1000))});finish()}else{S.phase="handoff";save();handoff()}});
+    if(S.stage>=8){S.phase="finish";S.end=Date.now();save();logEvent("TAMAT",{total_ms:Math.max(0,S.end-startMs(S.start))});finish()}else{S.phase="handoff";save();handoff()}});
 }
 function handoff(){
   clearInterval(tick);header();$app.innerHTML="";
@@ -655,11 +657,11 @@ function handoff(){
 }
 function finish(){
   clearInterval(tick);header();$app.innerHTML="";
-  const secs=Math.max(0,Math.round(((S.end||Date.now())-startMs(S.start))/1000)),tn=teamName(S.team);
+  const ms=Math.max(0,(S.end||Date.now())-startMs(S.start)),tn=teamName(S.team);
   const c=el(`<section class="fin" style="--tc:${teamColor(tn)}">
     <canvas class="confetti" aria-hidden="true"></canvas>
     <div class="fin-band"><div class="fin-flag" aria-hidden="true"></div><div class="fin-kicker">Rantai lengkap</div><div class="fin-team">${dot(tn)}${esc(tn)}</div></div>
-    <div class="fin-time"><div class="fin-label">Anggaran masa (jam phone)</div><div class="fin-clock">${fmt(secs)}</div>
+    <div class="fin-time"><div class="fin-label">Anggaran masa (jam phone)</div><div class="fin-clock">${fmt(Math.floor(ms/1000))}<span class="fin-ms">.${Math.floor(ms%1000/100)}</span></div>
       <div class="fin-sub">Masa rasmi ikut jam randik fasilitator</div></div>
     <p class="fin-note">Tunjukkan skrin ini kepada fasilitator.</p>
     ${LOG_URL?`<p class="logstat" id="logStat"></p>`:""}

@@ -517,7 +517,19 @@ function home(msg){
 }
 
 /* Terima kod rantai. Pulangkan mesej ralat, atau null jika berjaya. */
+/* QR mula (kertas kikis): #mula-<pasukan 0-5>-<kunci>. Sama seperti index.html. */
+function startKey(i){let x=2166136261;for(const c of `mula|${i}|${START_PASSWORD.toLowerCase()}`){x^=c.charCodeAt(0);x=Math.imul(x,16777619)>>>0}return x.toString(36).padStart(6,"0").slice(-6)}
 function acceptCode(raw){
+  const q=String(raw||"").replace(/^.*#/,"").trim().toLowerCase().match(/^mula-([0-5])-([0-9a-z]{6})$/);
+  if(q){
+    const ti=+q[1];
+    if(startKey(ti)!==q[2])return "QR mula tidak sah. Minta QR baharu daripada fasilitator.";
+    const pf=playedFor(ti);
+    if(pf)return `Phone ini sudah digunakan untuk ${teamName(ti)} (Game ${pf}).`;
+    stopScan();markPlayed(ti,1);
+    S={team:ti,stage:1,start:nowS(),phase:"intro"};save();buzz(30);intro();
+    return null;
+  }
   const r=readCode(raw);
   if(!r)return "Kod tidak sah. Semak semula atau scan QR sekali lagi.";
   if(usedHere(r.code))return "Kod ini sudah digunakan pada phone ini.";

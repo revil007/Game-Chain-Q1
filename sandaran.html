@@ -164,6 +164,26 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .valve span::after{transform:rotate(90deg)}
 .valve:active .valve-face{transform:translateY(3px);box-shadow:0 1px 0 #9e2f2f}
 .valve-pop.miss{color:var(--stop)}
+.mole-board{width:100%;max-width:340px;align-self:center;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hole{aspect-ratio:1;max-width:100%;border-radius:50%;position:relative;overflow:hidden;padding:0;cursor:pointer;
+  background:radial-gradient(circle at 50% 40%,#2a1f14,#0c0805 70%);border:3px solid #3a2b1c;box-shadow:inset 0 10px 18px rgba(0,0,0,.6);touch-action:manipulation}
+.mole{position:absolute;left:50%;bottom:-100%;width:70%;height:70%;transform:translateX(-50%);border-radius:50% 50% 46% 46%;
+  background:linear-gradient(160deg,#a16207,#78350f);display:flex;align-items:center;justify-content:center;font-size:clamp(24px,7vw,34px);
+  box-shadow:inset 0 -6px 0 rgba(0,0,0,.25);transition:bottom .12s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+.hole.up .mole{bottom:6%}
+.hole.hit .mole{bottom:6%;background:linear-gradient(160deg,#4ade80,#16a34a)}
+.cvalve{position:absolute;width:84px;height:84px;margin:-42px 0 0 -42px;border:0;padding:0;background:transparent;display:grid;place-items:center;transition:transform .15s}
+.cvalve i{width:64px;height:64px;border-radius:50%;background:var(--vc);box-shadow:0 4px 0 var(--vs),inset 0 0 0 4px rgba(255,255,255,.35);display:grid;place-items:center;font-style:normal;font-size:26px;line-height:1;color:#10201f}
+.cvalve:active i{transform:translateY(3px);box-shadow:0 1px 0 var(--vs),inset 0 0 0 4px rgba(255,255,255,.35)}
+.vtarget{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 12px;border-radius:14px;background:var(--ink);border:2px solid var(--vc,var(--line))}
+.vt-k{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.vt-sw{width:42px;height:42px;border-radius:50%;background:var(--vc);display:grid;place-items:center;font-size:20px;color:#10201f;box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+.vt-n{font-family:var(--display);font-weight:400;font-size:26px;color:var(--vc);min-width:5.2ch}
+.vtarget.flash{animation:vtflash .25s ease-out}
+@keyframes vtflash{from{transform:scale(.94);opacity:.5}}
+.valve.safe .valve-face{background:radial-gradient(circle at 35% 30%,#8af5c4,var(--go));box-shadow:0 4px 0 #1f8a5a}
+.valve.safe:active .valve-face{box-shadow:0 1px 0 #1f8a5a}
+.valve{transition:transform .15s}
 .valve-pop{position:absolute;transform:translate(-50%,-50%);font-family:var(--display);font-size:28px;color:var(--go);pointer-events:none;animation:pop .35s ease-out forwards}
 @keyframes pop{to{opacity:0;transform:translate(-50%,-90%) scale(1.3)}}
 
@@ -247,31 +267,60 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 const GAMES=[
  {name:"Color Match Rush",desc:"Perkataan warna keluar dalam warna yang berbeza. Tekan butang yang TULISANNYA sama dengan perkataan itu. Abaikan warna! Perlu 12 betul. Salah tekan = terkunci 1 saat.",play:gColor},
  {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
- {name:"Padam Api",desc:"Padam 20 api yang muncul secara rawak. Mula perlahan, makin lama makin laju! Salah tekan pekerja 👷 = terkunci 3 saat, tekan petak kosong = terkunci 1 saat.",play:gFire},
+ {name:"Whack-a-Mole",desc:"Tekan tikus 🐹 yang muncul dari lubang secepat mungkin. Perlu 22 kena. Tikus makin laju. Tekan lubang kosong = terkunci 5 saat.",play:gMole},
  {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
- {name:"Tutup Injap",desc:"Injap merah muncul di tempat rawak. Tekan secepat mungkin untuk tutup 20 injap. Tekan tersasar = terkunci 1 saat.",play:gValve},
+ {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 1 saat.",play:gValve},
  {name:"Ingat Isyarat",desc:"Tengok urutan warna, kemudian ulang. 5 langkah.",play:gSimon},
  {name:"Eja Semula",desc:"Susun huruf yang bercampur menjadi perkataan keselamatan. 3 perkataan: 5 huruf, 8 huruf dan 10 huruf. Huruf salah = mula semula perkataan itu.",play:gWord},
  {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
 ];
 
 function gValve(box,done){
-  const N=20;let n=0,locked=false;
+  const N=20;let n=0,locked=false,over=false,jumpT=null,target=null;
+  const C=[{n:"MERAH",h:"#ff5c5c",d:"#9e2f2f",y:"▲"},{n:"BIRU",h:"#4aa8ff",d:"#1f5f9e",y:"●"},
+           {n:"KUNING",h:"#ffc93c",d:"#a07a12",y:"■"},{n:"HIJAU",h:"#3ddc97",d:"#1f8a5a",y:"◆"}];
   const s=el(`<p>Injap ditutup: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
   box.append(el(`<div class="bar"><i></i></div>`));
+  const tg=el(`<div class="vtarget" aria-live="polite"><span class="vt-k">Tekan injap</span><span class="vt-sw"></span><b class="vt-n"></b></div>`);box.append(tg);
   const area=el(`<div class="valve-area"></div>`);box.append(area);
-  const v=el(`<button class="valve" aria-label="Tutup injap"><i class="valve-face"><span></span></i></button>`);area.append(v);
-  box.append(el(`<p style="text-align:center;font-size:13px">Tekan tersasar = terkunci 1 saat</p>`));
-  area.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||n>=N)return;locked=true;buzz([60,40,60]);
-    const p=el(`<span class="valve-pop miss" style="left:${(e.offsetX/area.clientWidth*100)||50}%;top:${(e.offsetY/area.clientHeight*100)||50}%">✕</span>`);area.append(p);setTimeout(()=>p.remove(),350);
-    await lockOut(box,1,"Tersasar!");locked=false});
-  let lx=50,ly=50;
-  const move=()=>{let x,y;do{x=8+Math.random()*84;y=10+Math.random()*80}while(Math.hypot(x-lx,y-ly)<25);lx=x;ly=y;v.style.left=x+"%";v.style.top=y+"%"};
-  move();
-  v.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(locked||n>=N)return;n++;buzz(12);
-    s.querySelector("b").textContent=n;box.querySelector(".bar i").style.width=(n/N*100)+"%";
-    const p=el(`<span class="valve-pop" style="left:${lx}%;top:${ly}%">✓</span>`);area.append(p);setTimeout(()=>p.remove(),350);
-    if(n>=N){v.hidden=true;setTimeout(done,300)}else move()});
+  const valves=C.map(()=>{const b=el(`<button class="cvalve" type="button"><i></i></button>`);area.append(b);return b});
+  box.append(el(`<p style="text-align:center;font-size:13px">Warna sasaran bertukar setiap kali. Salah warna atau tersasar = terkunci 1 saat.</p>`));
+  let last={x:50,y:50};
+  const pop=(x,y,txt,cls)=>{const p=el(`<span class="valve-pop ${cls||""}" style="left:${x}%;top:${y}%">${txt}</span>`);area.append(p);setTimeout(()=>p.remove(),350)};
+  const far=(a,b,d)=>Math.hypot(a.x-b.x,a.y-b.y)>=d;
+  const spot=avoid=>{let p,k=0;do{p={x:8+Math.random()*84,y:10+Math.random()*80};k++}while(k<60&&!avoid.every(([q,d])=>far(p,q,d)));return p};
+  const setTarget=()=>{
+    let t;do{t=C[Math.random()*C.length|0]}while(t===target&&Math.random()<.75);target=t;
+    tg.style.setProperty("--vc",t.h);tg.querySelector(".vt-sw").textContent=t.y;tg.querySelector(".vt-n").textContent=t.n;
+    tg.classList.remove("flash");void tg.offsetWidth;tg.classList.add("flash");
+  };
+  const place=()=>{
+    clearTimeout(jumpT);if(over)return;
+    const scale=1-0.35*(n/N);                                   // injap mengecil hingga ~65%
+    const count=n<6?3:4;                                        // 4 warna selepas 6 injap
+    const cols=[target,...shuffle(C.filter(c=>c!==target))].slice(0,count);
+    const r=spot([[last,25]]);last=r;const used=[];
+    valves.forEach((v,i)=>{
+      if(i>=count){v.hidden=true;return}
+      const c=cols[i],p=i===0?r:spot(used);used.push([p,24]);
+      v.hidden=false;v._c=c;v._p=p;v.setAttribute("aria-label","Injap "+c.n.toLowerCase());
+      v.style.setProperty("--vc",c.h);v.style.setProperty("--vs",c.d);v.querySelector("i").textContent=c.y;
+      v.style.left=p.x+"%";v.style.top=p.y+"%";v.style.transform=`scale(${scale})`;
+    });
+    jumpT=setTimeout(()=>{if(!locked&&box.isConnected)place()},Math.max(650,1500-n*45));   // lompat sendiri jika lambat
+  };
+  const lock=async(x,y,why)=>{
+    locked=true;clearTimeout(jumpT);buzz([60,40,60]);pop(x,y,"✕","miss");
+    await lockOut(box,1,why);locked=false;if(!over&&box.isConnected)place();
+  };
+  area.addEventListener("pointerdown",e=>{e.preventDefault();if(locked||over)return;
+    lock((e.offsetX/area.clientWidth*100)||50,(e.offsetY/area.clientHeight*100)||50,"Tersasar!")});
+  valves.forEach(v=>v.addEventListener("pointerdown",e=>{e.preventDefault();e.stopPropagation();if(locked||over)return;
+    if(v._c!==target)return lock(v._p.x,v._p.y,"Salah warna!");
+    n++;buzz(12);s.querySelector("b").textContent=n;box.querySelector(".bar i").style.width=(n/N*100)+"%";pop(v._p.x,v._p.y,"✓");
+    if(n>=N){over=true;clearTimeout(jumpT);valves.forEach(x=>x.hidden=true);setTimeout(done,300);return}
+    setTarget();place()}));
+  setTarget();place();
 }
 function lockOut(box,secs,why){
   return new Promise(res=>{
@@ -281,33 +330,40 @@ function lockOut(box,secs,why){
     const t=setInterval(()=>{left--;if(left<=0||!box.isConnected){clearInterval(t);o.remove();res()}else o.querySelector(".lock-n").textContent=left},1000);
   });
 }
-function gFire(box,done){
-  const N=20;let hits=0,over=false,locked=false,spawn;
-  const s=el(`<p>Api dipadam: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
+function gMole(box,done){
+  // Ikut game5.html: 22 kena, 9 lubang, tikus naik 700ms → 300ms, jeda 180ms. Tekan lubang kosong = terkunci 5 saat.
+  const PEN=5,GRACE=250;   // GRACE: tekan lewat sejurus selepas tikus turun/dikena tidak dikira salah
+  const N=22,H=9,UP0=700,UPMIN=300,GAP=180;
+  let hits=0,active=-1,running=true,locked=false,downT=null,spawnT=null;
+  const s=el(`<p>Kena: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
   box.append(el(`<div class="bar"><i></i></div>`));
-  const g=el(`<div class="grid g3"></div>`);box.append(g);
-  box.append(el(`<p style="text-align:center;font-size:13px">Tekan pekerja 👷 = kunci 3 saat · Tekan petak kosong = kunci 1 saat</p>`));
-  const cells=[...Array(9)].map(()=>{const b=el(`<button class="tile fire-cell" aria-label="Petak"></button>`);g.append(b);return b});
-  const upd=()=>{s.querySelector("b").textContent=hits;box.querySelector(".bar i").style.width=(hits/N*100)+"%"};
-  const clear=b=>{clearTimeout(b._t);b.dataset.k="";b.textContent="";b.classList.remove("hot","person")};
-  const lock=async(secs,why)=>{locked=true;buzz([80,50,80]);await lockOut(box,secs,why);locked=false};
-  cells.forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();if(over||locked)return;
-    if(b.dataset.k==="fire"){hits++;buzz(15);clear(b);b.textContent="💨";setTimeout(()=>{if(!b.dataset.k)b.textContent=""},250);upd();
-      if(hits>=N){over=true;clearTimeout(spawn);cells.forEach(clear);setTimeout(done,300)}}
-    else if(b.dataset.k==="person"){clear(b);b.textContent="✋";b.classList.add("ouch");setTimeout(()=>{b.classList.remove("ouch");if(!b.dataset.k)b.textContent=""},400);lock(3,"Anda tersembur pekerja!")}
-    else{b.classList.add("ouch");setTimeout(()=>b.classList.remove("ouch"),300);lock(1,"Tiada api di situ")}
-  }));
-  const next=()=>{
-    if(over||!box.isConnected)return;
-    const free=cells.filter(b=>!b.dataset.k);
-    if(free.length){
-      const b=free[Math.random()*free.length|0];const fire=Math.random()<0.75;
-      b.dataset.k=fire?"fire":"person";b.textContent=fire?"🔥":"👷";b.classList.add(fire?"hot":"person");
-      b._t=setTimeout(()=>clear(b),fire?Math.max(650,1600-hits*48):1400);
-    }
-    spawn=setTimeout(next,Math.max(340,1000-hits*33));   // mula perlahan, makin laju ikut api dipadam
+  const g=el(`<div class="mole-board"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Tekan lubang kosong = terkunci ${PEN} saat.</p>`));
+  const holes=[...Array(H)].map((_,i)=>{const h=el(`<button class="hole" type="button" aria-label="Lubang ${i+1}"><span class="mole">🐹</span></button>`);g.append(h);return h});
+  const upMs=()=>Math.max(UPMIN,UP0-(UP0-UPMIN)*(hits/N));   // makin laju ikut bilangan kena
+  const spawn=()=>{
+    if(!running||!box.isConnected)return;
+    let i=Math.random()*H|0;if(i===active)i=(i+1)%H;active=i;
+    const h=holes[i];h.classList.remove("hit");h.classList.add("up");
+    downT=setTimeout(()=>{if(!running)return;h.classList.remove("up");h._t=Date.now();active=-1;spawnT=setTimeout(spawn,GAP)},upMs());
   };
-  spawn=setTimeout(next,600);
+  holes.forEach((h,i)=>h.addEventListener("pointerdown",e=>{
+    e.preventDefault();
+    if(!running||locked)return;
+    if(i!==active||!h.classList.contains("up")){
+      if(Date.now()-(h._t||0)<GRACE)return;          // tekan lewat / tekan berganda: abaikan
+      locked=true;clearTimeout(downT);clearTimeout(spawnT);active=-1;
+      holes.forEach(x=>x.classList.remove("up"));buzz([80,50,80]);
+      lockOut(box,PEN,"Salah tekan!").then(()=>{locked=false;if(running&&box.isConnected)spawnT=setTimeout(spawn,GAP)});
+      return;
+    }
+    clearTimeout(downT);h._t=Date.now();h.classList.remove("up");h.classList.add("hit");setTimeout(()=>h.classList.remove("hit"),220);
+    active=-1;hits++;buzz(12);
+    s.querySelector("b").textContent=hits;box.querySelector(".bar i").style.width=(hits/N*100)+"%";
+    if(hits>=N){running=false;clearTimeout(spawnT);setTimeout(done,250);return}
+    spawnT=setTimeout(spawn,GAP);
+  }));
+  spawnT=setTimeout(spawn,600);
 }
 function gGauge(box,done){
   const widths=[28,25,22,19,17,15,13,11],N=widths.length;let ok=0,pos=0,dir=1,speed=0.9,zone=0,last=0,live=true,locked=false;

@@ -100,6 +100,9 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .pill{font-weight:800;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--line)}
 .pill.ok{background:var(--go);color:#062b1b}
 .btn:disabled{opacity:.6}
+.passrow{display:flex;gap:8px}
+.passrow input{min-width:0;flex:1}
+.passeye{flex:none;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--muted);font-weight:700;font-size:14px}
 .livelink{flex:none;display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--fg);font-weight:800;font-size:13px;text-decoration:none;white-space:nowrap}
 .livelink i{width:8px;height:8px;border-radius:50%;background:var(--go);box-shadow:0 0 0 3px rgba(61,220,151,.25)}
 .livelink:active{transform:scale(.97)}
@@ -205,6 +208,8 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 const API_URL = "https://script.google.com/macros/s/AKfycbyRE8htk8mPauI3yhOiXBK58VgtsF398IiTkRU50Zl3afz4svDJpZxvvUbyU2yvJwa-nw/exec";
 // Minta no. pekerja? true = ya (hari acara), false = tidak (ujian). Tukar juga REQUIRE_STAFF dalam Code.gs.
 const ASK_STAFF = false;
+// Password untuk mula Game 1 (huruf besar/kecil tidak penting)
+const START_PASSWORD = "sci221548";
 const TEAMS = [
   {name:"Obsidian Elite", color:"#e3b21f"},
   {name:"Red Gladiators", color:"#d8362f"},
@@ -454,20 +459,25 @@ function home(msg){
     <ol class="list">${GAMES.map((g,i)=>`<li><b>${i+1}</b>${g.name}</li>`).join("")}</ol>
     ${msg?`<p class="err">${esc(msg)}</p>`:""}
     <div ${ASK_STAFF?"":"hidden"}><label for="staff">No. pekerja anda</label><input id="staff" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="cth: SCI0123"></div>
+    <div><label for="pass">Password permainan</label><div class="passrow"><input id="pass" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Dapatkan daripada fasilitator"><button type="button" class="passeye" id="passEye" aria-label="Tunjuk password">Tunjuk</button></div></div>
     <p class="err" id="err" hidden></p>
     <button class="btn" id="go">Mula Game 1</button>
   </section>`);
   $app.append(c);
   const tp=teamPicker();c.querySelector("#staff").parentElement.before(tp);
+  const pin=c.querySelector("#pass"),eye=c.querySelector("#passEye");
+  eye.onclick=()=>{const show=pin.type==="password";pin.type=show?"text":"password";eye.textContent=show?"Sorok":"Tunjuk";eye.setAttribute("aria-label",show?"Sorok password":"Tunjuk password")};
   const b=c.querySelector("#go"),err=c.querySelector("#err");
   b.onclick=async()=>{
-    const staff=c.querySelector("#staff").value.trim(),team=tp.value();
+    const staff=c.querySelector("#staff").value.trim(),team=tp.value(),pass=c.querySelector("#pass").value.trim();
     if(!team){err.textContent="Sila pilih pasukan anda.";err.hidden=false;return}
+    if(!pass){err.textContent="Sila masukkan password permainan.";err.hidden=false;return}
+    if(pass.toLowerCase()!==START_PASSWORD.toLowerCase()){err.textContent="Password salah. Dapatkan password daripada fasilitator.";err.hidden=false;buzz([60,40,60]);return}
     if(ASK_STAFF&&!staff){err.textContent="Sila masukkan no. pekerja.";err.hidden=false;return}
     err.hidden=true;
     const my=++bootId;
     S={team,stage:1,start:0,phase:"verify",staff};intro(true);   // papar arahan serta-merta, server semak di belakang
-    try{const j=await api("start",{team,staff});
+    try{const j=await api("start",{team,staff,pass});
       if(my!==bootId)return;
       S={team:j.team,stage:1,key:j.key,start:j.start,hash:"",phase:"intro",name:j.name,staff,next:j.next||""};
       try{history.replaceState(null,"",location.pathname)}catch(e){}

@@ -164,6 +164,8 @@ tr.fin td:first-child{font-family:var(--display);color:var(--hazard)}
 .valve span::after{transform:rotate(90deg)}
 .valve:active .valve-face{transform:translateY(3px);box-shadow:0 1px 0 #9e2f2f}
 .valve-pop.miss{color:var(--stop)}
+.tbar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:var(--hazard);border-radius:3px}
 .grid.simon{gap:10px}
 .simon .pad{display:grid;place-items:center;font-size:42px;line-height:1;color:#10201f;border:0;transition:opacity .08s,transform .08s}
 .simon-steps{display:flex;gap:6px;justify-content:center}
@@ -235,6 +237,15 @@ body{padding-top:env(safe-area-inset-top,0px);padding-bottom:max(24px,env(safe-a
 .logstat.ok{color:#2e9e6a}
 .logstat.wait{color:var(--muted)}
 .reset{align-self:center;background:none;border:0;color:var(--muted);font-size:13px;text-decoration:underline;padding:8px}
+
+.grid.mem{gap:6px}
+.grid.mem .tile{font-size:24px;border-radius:10px}
+.simon .pad{opacity:.42}
+.simon .pad.lit{opacity:1;transform:scale(1.04);box-shadow:0 0 0 3px #fff,0 0 22px rgba(255,255,255,.35)}
+.gauge .rz{position:absolute;top:0;bottom:0;background:var(--stop);opacity:.8}
+.gauge .rz.l{border-radius:6px 0 0 6px}
+.gauge .rz.r{border-radius:0 6px 6px 0}
+.gauge .zone{border-radius:0}
 </style>
 </head>
 <body>
@@ -276,13 +287,13 @@ const el=html=>{const d=document.createElement("div");d.innerHTML=html.trim();re
 /* ===== 8 Game ===== */
 const GAMES=[
  {name:"Warna Dakwat",desc:"Perkataan warna ditulis dengan warna lain. Tekan butang mengikut WARNA tulisan, bukan perkataannya. Perlu 12 betul. Salah = terkunci 5 saat.",play:gInk},
- {name:"Padan Gambar",desc:"Buka kad dan padankan 8 pasang gambar (grid 4 × 4). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
+ {name:"Padan Gambar",desc:"Buka kad dan padankan 12 pasang gambar (grid 4 × 6). Kad yang tidak sepadan akan tertutup semula.",play:gMemory},
  {name:"Whack-a-Mole",desc:"Tekan tikus 🐹 yang muncul dari lubang secepat mungkin. Perlu 22 kena. Tikus makin laju. Tekan lubang kosong = terkunci 5 saat.",play:gMole},
- {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Setiap kali anda tekan nombor yang betul, nombor yang tinggal akan bertukar tempat!",play:gOrder},
- {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 1 saat.",play:gValve},
+ {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Nombor bertukar tempat setiap kali betul, dan juga kalau anda lambat. Had masa bermula 2.5 saat dan makin singkat hingga 1 saat. Salah tekan = terkunci 5 saat.",play:gOrder},
+ {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 5 saat.",play:gValve},
  {name:"Cari Yang Lain",desc:"Satu petak warnanya sedikit berbeza. Tekan petak itu. 10 pusingan, grid makin besar dan beza warna makin halus. Salah = terkunci 5 saat.",play:gOdd},
- {name:"Ingat Isyarat",desc:"Tengok urutan warna yang berkelip, kemudian tekan semula dalam susunan yang sama. Urutan bertambah satu langkah setiap pusingan sehingga 5. Salah = terkunci 3 saat, kemudian urutan ditunjuk semula.",play:gSimon},
- {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 8 kali, zon makin kecil dan jarum makin laju. Terlepas = terkunci 2 saat.",play:gGauge},
+ {name:"Ingat Isyarat",desc:"Tengok urutan warna yang berkelip pada 9 petak, kemudian tekan semula dalam susunan yang sama. Urutan bertambah satu langkah setiap pusingan sehingga 8. Salah = terkunci 5 saat, dan kelipan jadi lebih laju setiap kali salah dalam pusingan yang sama. Kelajuan kembali asal pada pusingan baharu.",play:gSimon},
+ {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 10 kali dan zon makin sempit. Ada zon merah di kiri dan kanan zon hijau. Mulai kunci ke-4, zon bergerak dan kelajuan jarum berubah-ubah. Terlepas = terkunci 3 saat. Kena zon merah = terkunci 5 saat.",play:gGauge},
 ];
 
 function gValve(box,done){
@@ -294,7 +305,7 @@ function gValve(box,done){
   const tg=el(`<div class="vtarget" aria-live="polite"><span class="vt-k">Tekan injap</span><span class="vt-sw"></span><b class="vt-n"></b></div>`);box.append(tg);
   const area=el(`<div class="valve-area"></div>`);box.append(area);
   const valves=C.map(()=>{const b=el(`<button class="cvalve" type="button"><i></i></button>`);area.append(b);return b});
-  box.append(el(`<p style="text-align:center;font-size:13px">Warna sasaran bertukar setiap kali. Salah warna atau tersasar = terkunci 1 saat.</p>`));
+  box.append(el(`<p style="text-align:center;font-size:13px">Warna sasaran bertukar setiap kali. Salah warna atau tersasar = terkunci 5 saat.</p>`));
   let last={x:50,y:50};
   const pop=(x,y,txt,cls)=>{const p=el(`<span class="valve-pop ${cls||""}" style="left:${x}%;top:${y}%">${txt}</span>`);area.append(p);setTimeout(()=>p.remove(),350)};
   const far=(a,b,d)=>Math.hypot(a.x-b.x,a.y-b.y)>=d;
@@ -321,7 +332,7 @@ function gValve(box,done){
   };
   const lock=async(x,y,why)=>{
     locked=true;clearTimeout(jumpT);buzz([60,40,60]);pop(x,y,"✕","miss");
-    await lockOut(box,1,why);locked=false;if(!over&&box.isConnected)place();
+    await lockOut(box,5,why);locked=false;if(!over&&box.isConnected)place();
   };
   area.addEventListener("pointerdown",e=>{e.preventDefault();if(locked||over)return;
     lock((e.offsetX/area.clientWidth*100)||50,(e.offsetY/area.clientHeight*100)||50,"Tersasar!")});
@@ -376,43 +387,60 @@ function gMole(box,done){
   spawnT=setTimeout(spawn,600);
 }
 function gGauge(box,done){
-  const widths=[28,25,22,19,17,15,13,11],N=widths.length;let ok=0,pos=0,dir=1,speed=0.9,zone=0,last=0,live=true,locked=false;
+  // 10 kunci, zon makin sempit. Zon merah di kiri & kanan zon hijau.
+  // Kunci 1–3: biasa. Kunci 4–10: zon bergerak dan kelajuan jarum berubah-ubah.
+  // Terlepas (kawasan biasa) = kunci 3 saat. Kena zon merah = kunci 5 saat.
+  const widths=[28,25,22,19,17,15,13,11,10,9],N=widths.length,HARD=3,PEN=3,PEN_RED=5,R=7;
+  let ok=0,pos=0,dir=1,speed=0.9,zone=0,zdir=1,phase=Math.random()*6,last=0,live=true,locked=false;
   const s=el(`<p>Berjaya: <b style="color:var(--go)">0</b> / ${N}</p>`);box.append(s);
-  const tr=el(`<div class="gauge"><div class="zone"></div><div class="needle"></div></div>`);box.append(tr);
-  const msg=el(`<p class="gmsg">Tekan KUNCI bila jarum dalam zon hijau. Terlepas = kunci 2 saat.</p>`);box.append(msg);
+  const tr=el(`<div class="gauge"><div class="rz l"></div><div class="zone"></div><div class="rz r"></div><div class="needle"></div></div>`);box.append(tr);
+  const msg=el(`<p class="gmsg">Tekan KUNCI bila jarum dalam zon hijau. Terlepas = kunci ${PEN} saat. Kena zon merah = kunci ${PEN_RED} saat.</p>`);box.append(msg);
   const btn=el(`<button class="btn" style="font-size:22px;padding:20px">KUNCI</button>`);box.append(btn);
-  const z=tr.querySelector(".zone"),n=tr.querySelector(".needle");
-  const place=()=>{const w=widths[ok];zone=6+Math.random()*(88-w);z.style.left=zone+"%";z.style.width=w+"%"};place();
+  const z=tr.querySelector(".zone"),rl=tr.querySelector(".rz.l"),rr=tr.querySelector(".rz.r"),n=tr.querySelector(".needle");
+  const draw=()=>{const w=widths[ok];z.style.left=zone+"%";z.style.width=w+"%";
+    rl.style.left=(zone-R)+"%";rl.style.width=R+"%";rr.style.left=(zone+w)+"%";rr.style.width=R+"%"};
+  const lo=()=>2+R,hi=()=>98-R-widths[ok];
+  const place=()=>{zone=lo()+Math.random()*(hi()-lo());zdir=Math.random()<.5?1:-1;draw()};place();
   const frame=t=>{if(!live||!box.isConnected)return;const dt=last?Math.min(40,t-last):16;last=t;
-    pos+=dir*speed*dt/16;if(pos>=100){pos=100;dir=-1}if(pos<=0){pos=0;dir=1}n.style.left=pos+"%";requestAnimationFrame(frame)};
+    const hard=ok>=HARD;
+    phase+=dt*(0.0021+0.0008*Math.sin(t/900));
+    const v=hard?speed*(1+0.55*Math.sin(phase)):speed;            // kelajuan jarum turun naik bila sukar
+    pos+=dir*v*dt/16;if(pos>=100){pos=100;dir=-1}if(pos<=0){pos=0;dir=1}n.style.left=pos+"%";
+    if(hard){zone+=zdir*(0.22+0.05*(ok-HARD))*dt/16;               // zon bergerak bila sukar
+      if(zone>=hi()){zone=hi();zdir=-1}if(zone<=lo()){zone=lo();zdir=1}draw()}
+    requestAnimationFrame(frame)};
   requestAnimationFrame(frame);
   btn.addEventListener("pointerdown",async e=>{e.preventDefault();if(locked||!live)return;
     const w=widths[ok];
     if(pos>=zone&&pos<=zone+w){ok++;s.querySelector("b").textContent=ok;buzz(25);
       if(ok>=N){live=false;msg.textContent="Tekanan stabil!";setTimeout(done,400);return}
-      msg.textContent=`Tepat! ${N-ok} lagi, zon makin kecil…`;speed+=0.18;place()}
-    else{locked=true;buzz([80,50,80]);tr.classList.remove("miss");void tr.offsetWidth;tr.classList.add("miss");
-      await lockOut(box,2,"Terlepas zon hijau!");locked=false;msg.textContent="Cuba lagi!"}
+      msg.textContent=ok===HARD?"Awas! Zon hijau mula bergerak dan jarum tak sekata…":`Tepat! ${N-ok} lagi, zon makin kecil…`;
+      speed+=0.13;place();return}
+    const red=(pos>=zone-R&&pos<zone)||(pos>zone+w&&pos<=zone+w+R);
+    locked=true;buzz(red?[120,60,120,60,120]:[80,50,80]);tr.classList.remove("miss");void tr.offsetWidth;tr.classList.add("miss");
+    await lockOut(box,red?PEN_RED:PEN,red?"Kena zon merah!":"Terlepas zon hijau!");locked=false;msg.textContent="Cuba lagi!";
   });
 }
 function gSimon(box,done){
-  // Ingat Isyarat: 5 langkah, rawak tetapi seimbang. Salah = kunci 3 saat, urutan pusingan itu ditunjuk semula.
-  const L=5,PEN=3;
-  const C=[{h:"var(--stop)",y:"▲",n:"merah"},{h:"var(--go)",y:"◆",n:"hijau"},{h:"var(--blue)",y:"●",n:"biru"},{h:"var(--hazard)",y:"■",n:"kuning"}];
-  // Urutan seimbang: tiada warna sama berturut-turut, sekurang-kurangnya 3 warna berbeza
-  const makeSeq=()=>{let s;do{s=[];for(let i=0;i<L;i++){let c;do{c=Math.random()*4|0}while(i&&c===s[i-1]);s.push(c)}}while(new Set(s).size<3);return s};
-  const seq=makeSeq();let len=1,pos=0,busy=true,over=false;
+  // Ingat Isyarat: 9 petak, 8 langkah, tanpa simbol, rawak tetapi seimbang. Salah = kunci 5 saat, urutan pusingan itu ditunjuk semula dengan kelipan lebih laju.
+  const L=8,PEN=5;
+  const C=[{h:"var(--stop)",n:"merah"},{h:"var(--go)",n:"hijau"},{h:"var(--blue)",n:"biru"},{h:"var(--hazard)",n:"kuning"},{h:"#a06bff",n:"ungu"},{h:"#ff8a3c",n:"oren"},{h:"#ff6fcf",n:"merah jambu"},{h:"#eef5f1",n:"putih"},{h:"#36d6e0",n:"biru muda"}];
+  // Urutan seimbang: tiada warna sama berturut-turut, sekurang-kurangnya 5 warna berbeza
+  const makeSeq=()=>{let s;do{s=[];for(let i=0;i<L;i++){let c;do{c=Math.random()*C.length|0}while(i&&c===s[i-1]);s.push(c)}}while(new Set(s).size<Math.min(5,L));return s};
+  const seq=makeSeq();let len=1,pos=0,busy=true,over=false,miss=0;
+  const BASE=440,STEP=70,FAST=200;   // kelajuan asal setiap pusingan; salah dalam pusingan yang sama = 70ms lebih laju (paling laju 200ms)
   const st=el(`<p class="gmsg">Perhatikan…</p>`);box.append(st);
   const prog=el(`<div class="simon-steps">${[...Array(L)].map(()=>"<i></i>").join("")}</div>`);box.append(prog);
-  const g=el(`<div class="grid g2 simon"></div>`);box.append(g);
-  const pads=C.map(c=>{const b=el(`<button class="pad" type="button" aria-label="Pad ${c.n}" style="background:${c.h}">${c.y}</button>`);g.append(b);return b});
-  box.append(el(`<p style="text-align:center;font-size:13px">Salah = terkunci ${PEN} saat, kemudian urutan ditunjuk semula.</p>`));
+  const g=el(`<div class="grid g3 simon"></div>`);box.append(g);
+  const pads=C.map(c=>{const b=el(`<button class="pad" type="button" aria-label="Pad ${c.n}" style="background:${c.h}"></button>`);g.append(b);return b});
+  box.append(el(`<p style="text-align:center;font-size:13px">Salah = terkunci ${PEN} saat, kemudian urutan ditunjuk semula dengan kelipan lebih laju. Kelajuan kembali asal pada pusingan seterusnya.</p>`));
   const steps=()=>[...prog.children].forEach((d,i)=>d.className=i<len-1?"done":i===len-1?"now":"");
   const flash=(i,ms)=>new Promise(r=>{pads[i].classList.add("lit");setTimeout(()=>{pads[i].classList.remove("lit");setTimeout(r,Math.max(110,ms*.4))},ms)});
   const show=async()=>{
-    busy=true;pos=0;steps();st.textContent=`Perhatikan… (${len}/${L})`;
+    busy=true;pos=0;steps();
+    const ms=Math.max(FAST,BASE-miss*STEP);
+    st.textContent=miss?`Perhatikan… (${len}/${L}) · kelipan lebih laju ×${(BASE/ms).toFixed(1)}`:`Perhatikan… (${len}/${L})`;
     await new Promise(r=>setTimeout(r,450));
-    const ms=Math.max(300,440-(len-1)*35);          // kelipan makin laju sedikit
     for(let k=0;k<len;k++){if(!box.isConnected)return;await flash(seq[k],ms)}
     busy=false;st.textContent=`Giliran anda: ulang ${len} langkah`;
   };
@@ -420,46 +448,67 @@ function gSimon(box,done){
     e.preventDefault();if(busy||over)return;
     p.classList.add("lit");setTimeout(()=>p.classList.remove("lit"),160);
     if(i!==seq[pos]){
-      busy=true;buzz([80,50,80]);
-      await lockOut(box,PEN,"Salah urutan!");
+      busy=true;buzz([80,50,80]);miss++;
+      await lockOut(box,PEN,"Salah urutan! Kelipan seterusnya lebih laju");
       if(box.isConnected)show();
       return;
     }
     buzz(10);pos++;
     if(pos===len){
       if(len>=L){over=true;busy=true;len=L+1;steps();st.textContent="Hebat!";setTimeout(done,400);return}
-      len++;busy=true;setTimeout(show,350);
+      len++;miss=0;busy=true;setTimeout(show,350);   // pusingan baharu: kelajuan kembali asal
     }
   }));
   show();
 }
 function gMemory(box,done){
-  const icons=["🍉","🚗","⚽","🎸","🌴","🐠","🏠","⭐"];
+  // 12 pasang (24 kad, 4 × 6). Tiada penalti: kad tak sepadan hanya tertutup semula.
+  const icons=["🍉","🚗","⚽","🎸","🌴","🐠","🏠","⭐","🚀","🎈","🔔","🧩"];
   const deck=shuffle([...icons,...icons]);let open=[],matched=0,lock=false;
-  const g=el(`<div class="grid g4"></div>`);box.append(g);
+  const s=el(`<p>Pasangan: <b style="color:var(--go)">0</b> / ${icons.length}</p>`);box.append(s);
+  const g=el(`<div class="grid g4 mem"></div>`);box.append(g);
   deck.forEach((ic,i)=>{const b=el(`<button class="tile back" aria-label="Kad ${i+1}"></button>`);b.dataset.ic=ic;g.append(b);
     b.onclick=()=>{if(lock||b.classList.contains("ok")||open.includes(b))return;b.classList.remove("back");b.textContent=ic;open.push(b);
       if(open.length===2){lock=true;const[a,c]=open;
-        if(a.dataset.ic===c.dataset.ic){a.classList.add("ok");c.classList.add("ok");open=[];lock=false;matched++;buzz(20);if(matched===icons.length)setTimeout(done,350)}
+        if(a.dataset.ic===c.dataset.ic){a.classList.add("ok");c.classList.add("ok");open=[];lock=false;matched++;buzz(20);s.querySelector("b").textContent=matched;if(matched===icons.length)setTimeout(done,350)}
         else setTimeout(()=>{[a,c].forEach(x=>{x.classList.add("back");x.textContent=""});open=[];lock=false},650)}}});
 }
 function gOrder(box,done){
-  const N=20;let next=1;
+  // Susun 1–20: salah tekan = kunci 5 saat; lambat = nombor bertukar tempat. Had masa 2.5 saat → 1 saat (makin laju)
+  const N=20,PEN=5,L0=2500,L1=1000;
+  const limit=()=>Math.round(L0-(L0-L1)*(Math.min(next,N)-1)/(N-1));let next=1,locked=false,over=false,timer=null;
   const calm=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b> · nombor bertukar tempat setiap kali betul</p>`);box.append(info);
+  const info=el(`<p>Seterusnya: <b style="color:var(--hazard)">1</b></p>`);box.append(info);
+  const tb=el(`<div class="tbar" aria-hidden="true"><i></i></div>`);box.append(tb);
   const g=el(`<div class="grid g4"></div>`);box.append(g);
+  box.append(el(`<p style="text-align:center;font-size:13px">Salah tekan = terkunci ${PEN} saat. Lambat = nombor bertukar tempat (2.5 saat, makin singkat hingga 1 saat).</p>`));
   const cells=[...Array(N)].map(()=>{const b=el(`<button class="tile"></button>`);g.append(b);return b});
+  const bar=tb.querySelector("i");
+  const countdown=()=>{
+    clearTimeout(timer);
+    bar.style.transition="none";bar.style.width="100%";void bar.offsetWidth;
+    const ms=limit();
+    bar.style.transition=`width ${ms}ms linear`;bar.style.width="0%";
+    timer=setTimeout(()=>{if(!locked&&!over&&box.isConnected)deal()},ms);
+  };
   const deal=()=>{
     const left=[...Array(N-next+1)].map((_,k)=>next+k),slots=shuffle(cells);
     cells.forEach(c=>{c.dataset.n="";c.textContent="";c.classList.add("hit")});
     left.forEach((n,i)=>{const c=slots[i];c.dataset.n=n;c.textContent=n;c.classList.remove("hit")});
     if(!calm&&g.animate)g.animate([{opacity:.3},{opacity:1}],{duration:150});
+    countdown();
   };
-  cells.forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const n=+b.dataset.n;if(!n||next>N)return;
+  cells.forEach(b=>b.addEventListener("pointerdown",async e=>{e.preventDefault();
+    const n=+b.dataset.n;if(!n||locked||over)return;
     if(n===next){next++;buzz(10);info.querySelector("b").textContent=next>N?"✓":next;
-      if(next>N){cells.forEach(c=>{c.textContent="";c.classList.add("hit")});done();return}
+      if(next>N){over=true;clearTimeout(timer);cells.forEach(c=>{c.textContent="";c.classList.add("hit")});done();return}
       deal()}
-    else{b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");setTimeout(()=>b.classList.remove("opt","bad"),300);buzz(60)}}));
+    else{
+      locked=true;clearTimeout(timer);buzz([80,50,80]);
+      b.classList.remove("bad");void b.offsetWidth;b.classList.add("opt","bad");
+      await lockOut(box,PEN,"Salah nombor!");
+      b.classList.remove("opt","bad");locked=false;if(!over&&box.isConnected)deal();
+    }}));
   deal();
 }
 function gOdd(box,done){

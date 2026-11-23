@@ -304,7 +304,7 @@ const GAMES=[
  {name:"Susun 1–20",desc:"Tekan nombor 1 hingga 20 mengikut turutan. Nombor bertukar tempat setiap kali betul, dan juga kalau anda lambat. Had masa bermula 2.5 saat dan makin singkat hingga 1 saat. Salah tekan = terkunci 5 saat.",play:gOrder},
  {name:"Tutup Injap",desc:"Tekan injap yang sama warna dengan sasaran di atas. Warna sasaran bertukar setiap kali. Tutup 20 injap. Injap makin kecil dan melompat sendiri kalau lambat. Salah warna atau tersasar = terkunci 5 saat.",play:gValve},
  {name:"Cari Yang Lain",desc:"Satu petak warnanya sedikit berbeza. Tekan petak itu. 10 pusingan, grid makin besar dan beza warna makin halus. Salah = terkunci 5 saat.",play:gOdd},
- {name:"Ingat Isyarat",desc:"Tengok urutan warna yang berkelip pada 9 petak, kemudian tekan semula dalam susunan yang sama. Urutan bertambah satu langkah setiap pusingan sehingga 8. Salah = terkunci 5 saat, dan kelipan jadi lebih laju setiap kali salah dalam pusingan yang sama. Kelajuan kembali asal pada pusingan baharu.",play:gSimon},
+ {name:"Ingat Isyarat",desc:"Tengok urutan warna yang berkelip pada 9 petak, kemudian tekan semula dalam susunan yang sama. Urutan bertambah satu langkah setiap pusingan sehingga 8. Salah = terkunci 5 saat, dan kelipan jadi lebih laju setiap kali salah dalam pusingan yang sama (salah ke-5 kembali normal, kemudian laju semula). Kelajuan kembali asal pada pusingan baharu.",play:gSimon},
  {name:"Tolok Tekanan",desc:"Jarum bergerak ke kiri dan kanan. Tekan KUNCI bila jarum dalam zon hijau. Perlu 10 kali dan zon makin sempit. Ada zon merah di kiri dan kanan zon hijau. Mulai kunci ke-4, zon bergerak dan kelajuan jarum berubah-ubah. Terlepas = terkunci 3 saat. Kena zon merah = terkunci 5 saat.",play:gGauge},
 ];
 
@@ -440,18 +440,18 @@ function gSimon(box,done){
   // Urutan seimbang: tiada warna sama berturut-turut, sekurang-kurangnya 5 warna berbeza
   const makeSeq=()=>{let s;do{s=[];for(let i=0;i<L;i++){let c;do{c=Math.random()*C.length|0}while(i&&c===s[i-1]);s.push(c)}}while(new Set(s).size<Math.min(5,L));return s};
   const seq=makeSeq();let len=1,pos=0,busy=true,over=false,miss=0;
-  const BASE=440,STEP=70,FAST=200;   // kelajuan asal setiap pusingan; salah dalam pusingan yang sama = 70ms lebih laju (paling laju 200ms)
+  const BASE=440,STEP=70,FAST=200,CYCLE=5;   // salah dalam pusingan sama = 70ms lebih laju (had 200ms); salah ke-5,10,15… kembali normal, kemudian laju semula
   const st=el(`<p class="gmsg">Perhatikan…</p>`);box.append(st);
   const prog=el(`<div class="simon-steps">${[...Array(L)].map(()=>"<i></i>").join("")}</div>`);box.append(prog);
   const g=el(`<div class="grid g3 simon"></div>`);box.append(g);
   const pads=C.map(c=>{const b=el(`<button class="pad" type="button" aria-label="Pad ${c.n}" style="background:${c.h}"></button>`);g.append(b);return b});
-  box.append(el(`<p style="text-align:center;font-size:13px">Salah = terkunci ${PEN} saat, kemudian urutan ditunjuk semula dengan kelipan lebih laju. Kelajuan kembali asal pada pusingan seterusnya.</p>`));
+  box.append(el(`<p style="text-align:center;font-size:13px">Salah = terkunci ${PEN} saat, kemudian urutan ditunjuk semula dengan kelipan lebih laju. Selepas 4 kali salah, kelipan kembali normal sekali. Kelajuan kembali asal pada pusingan seterusnya.</p>`));
   const steps=()=>[...prog.children].forEach((d,i)=>d.className=i<len-1?"done":i===len-1?"now":"");
   const flash=(i,ms)=>new Promise(r=>{pads[i].classList.add("lit");setTimeout(()=>{pads[i].classList.remove("lit");setTimeout(r,Math.max(110,ms*.4))},ms)});
   const show=async()=>{
     busy=true;pos=0;steps();
-    const ms=Math.max(FAST,BASE-miss*STEP);
-    st.textContent=miss?`Perhatikan… (${len}/${L}) · kelipan lebih laju ×${(BASE/ms).toFixed(1)}`:`Perhatikan… (${len}/${L})`;
+    const ms=Math.max(FAST,BASE-(miss%CYCLE)*STEP);
+    st.textContent=ms<BASE?`Perhatikan… (${len}/${L}) · kelipan lebih laju ×${(BASE/ms).toFixed(1)}`:`Perhatikan… (${len}/${L})`;
     await new Promise(r=>setTimeout(r,450));
     for(let k=0;k<len;k++){if(!box.isConnected)return;await flash(seq[k],ms)}
     busy=false;st.textContent=`Giliran anda: ulang ${len} langkah`;
@@ -461,7 +461,7 @@ function gSimon(box,done){
     p.classList.add("lit");setTimeout(()=>p.classList.remove("lit"),160);
     if(i!==seq[pos]){
       busy=true;buzz([80,50,80]);miss++;
-      await lockOut(box,PEN,"Salah urutan! Kelipan seterusnya lebih laju");
+      await lockOut(box,PEN,miss%CYCLE?"Salah urutan! Kelipan seterusnya lebih laju":"Salah urutan! Kelipan kembali normal");
       if(box.isConnected)show();
       return;
     }
